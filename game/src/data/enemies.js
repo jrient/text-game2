@@ -54,6 +54,34 @@ export const ENEMIES = {
     size: 22, hp: 180, speed: 65, damage: 35,
     expDrop: 9, scoreValue: 48, knockback: 85,
   },
+
+  // ===== NEW ENEMIES =====
+  GHOST_WARRIOR: {
+    id: 'GHOST_WARRIOR', name: '幽灵战士',
+    bodyColor: 0x6644aa, eyeColor: 0x00ffff,
+    size: 16, hp: 50, speed: 110, damage: 20,
+    expDrop: 6, scoreValue: 28, knockback: 150,
+    behavior: 'teleport', // Will teleport when player is far
+    teleportRange: 300,
+    teleportCooldown: 3000,
+  },
+  FIRE_SLIME: {
+    id: 'FIRE_SLIME', name: '火焰史莱姆',
+    bodyColor: 0xff6622, eyeColor: 0xffff00,
+    size: 18, hp: 80, speed: 70, damage: 25,
+    expDrop: 8, scoreValue: 32, knockback: 100,
+    behavior: 'explode', // Explodes on death
+    explosionRadius: 80,
+    explosionDamage: 40,
+  },
+  STONE_GOLEM: {
+    id: 'STONE_GOLEM', name: '石头人',
+    bodyColor: 0x666666, eyeColor: 0x00ff00,
+    size: 24, hp: 300, speed: 30, damage: 50,
+    expDrop: 12, scoreValue: 60, knockback: 20,
+    behavior: 'armored', // Takes reduced damage
+    damageReduction: 0.5, // 50% damage reduction
+  },
 };
 
 export const BOSSES = {

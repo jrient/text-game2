@@ -2,11 +2,17 @@ import { C } from '../config.js';
 import { LEVELS } from '../data/levels.js';
 import { SettingsManager } from '../systems/SettingsManager.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
+import { musicSystem } from '../systems/MusicSystem.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
+    // Start background music
+    const musicEnabled = SettingsManager.get('musicEnabled') ?? true;
+    musicSystem.setEnabled(musicEnabled);
+    musicSystem.start();
+
     const W = C.W, H = C.H;
     this._buildBg();
     this._buildTitle();
@@ -14,6 +20,12 @@ export default class MenuScene extends Phaser.Scene {
     this._buildLevelSelect();
     this._buildFooter();
     this._animateTitle();
+  }
+
+  shutdown() {
+    // Stop music when leaving menu
+    musicSystem.stop();
+    super.shutdown();
   }
 
   _buildBg() {

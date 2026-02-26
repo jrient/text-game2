@@ -73,20 +73,256 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ═══════════════════════════════════════════════════════
-  //  BACKGROUND
+  //  BACKGROUND (enhanced with decorations)
   // ═══════════════════════════════════════════════════════
   _buildBackground() {
     const cfg = this.levelConfig;
     const tileKey = ['tile_grass', 'tile_sand', 'tile_stone', 'tile_lava', 'tile_void'][this.levelIndex] || 'tile_grass';
     const cols = Math.ceil(C.WORLD_W / C.TILE) + 1;
     const rows = Math.ceil(C.WORLD_H / C.TILE) + 1;
+
+    // Base tile layer
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         this.add.image(c * C.TILE + C.TILE / 2, r * C.TILE + C.TILE / 2, tileKey).setDepth(0);
       }
     }
-    // Background tint overlay
-    this.add.rectangle(C.WORLD_W / 2, C.WORLD_H / 2, C.WORLD_W, C.WORLD_H, cfg.bgColor, 0.35).setDepth(0.5);
+
+    // Add decorative elements based on biome
+    this._addDecorations(this.levelIndex);
+
+    // Background tint overlay (lighter)
+    this.add.rectangle(C.WORLD_W / 2, C.WORLD_H / 2, C.WORLD_W, C.WORLD_H, cfg.bgColor, 0.15).setDepth(0.5);
+
+    // Vignette effect
+    const vignette = this.add.graphics().setDepth(100).setScrollFactor(0);
+    vignette.fillStyle(0x000000, 0.3);
+    // Create gradient vignette (simplified)
+    const gradientSize = 300;
+    for (let i = 0; i < 4; i++) {
+      const x = i === 1 || i === 3 ? 0 : C.WORLD_W;
+      const y = i < 2 ? 0 : C.WORLD_H;
+      vignette.fillCircle(x, y, gradientSize);
+    }
+  }
+
+  /**
+   * Add biome-specific decorations
+   */
+  _addDecorations(levelIndex) {
+    // Determine decoration colors based on level
+    const decorColors = [
+      { flowers: 0xff66aa, rocks: 0x666666, grass: 0x44aa44 }, // Grass
+      { flowers: 0xffaa44, rocks: 0x887766, grass: 0xcc9966 }, // Sand
+      { flowers: 0x8888aa, rocks: 0x555566, grass: 0x666677 }, // Stone
+      { flowers: 0xff4422, rocks: 0x884422, grass: 0xcc6622 }, // Lava
+      { flowers: 0xaa44ff, rocks: 0x442266, grass: 0x660088 }, // Void
+    ];
+
+    const colors = decorColors[levelIndex] || decorColors[0];
+    const decorCount = 80; // Number of decorations
+
+    // Add random decorations
+    for (let i = 0; i < decorCount; i++) {
+      const x = Phaser.Math.Between(100, C.WORLD_W - 100);
+      const y = Phaser.Math.Between(100, C.WORLD_H - 100);
+      const type = Phaser.Math.Between(0, 3);
+
+      switch (type) {
+        case 0: // Small flower/plant
+          this._addFlower(x, y, colors.flowers);
+          break;
+        case 1: // Rock
+          this._addRock(x, y, colors.rocks);
+          break;
+        case 2: // Grass tuft
+          this._addGrassTuft(x, y, colors.grass);
+          break;
+        case 3: // Small detail
+          this._addSmallDetail(x, y, colors.flowers);
+          break;
+      }
+    }
+
+    // Add some landmark decorations (larger, fewer)
+    this._addLandmarks(levelIndex);
+  }
+
+  /**
+   * Add a small flower decoration
+   */
+  _addFlower(x, y, color) {
+    const g = this.add.graphics().setDepth(1).setPosition(x, y);
+    // Stem
+    g.fillStyle(0x448844);
+    g.fillRect(-1, 0, 2, 6);
+    // Petals
+    g.fillStyle(color);
+    g.fillCircle(0, -2, 3);
+    g.fillCircle(-3, -2, 2);
+    g.fillCircle(3, -2, 2);
+    g.fillCircle(0, -5, 2);
+    // Center
+    g.fillStyle(0xffcc44);
+    g.fillCircle(0, -2, 1.5);
+  }
+
+  /**
+   * Add a rock decoration
+   */
+  _addRock(x, y, color) {
+    const g = this.add.graphics().setDepth(1).setPosition(x, y);
+    const size = Phaser.Math.Between(6, 12);
+    // Main rock
+    g.fillStyle(color);
+    g.fillEllipse(0, 0, size, size * 0.7);
+    // Highlight
+    g.fillStyle(Phaser.Display.Color.IntegerToColor(color).brighten(20).color);
+    g.fillEllipse(-size * 0.2, -size * 0.15, size * 0.4, size * 0.25);
+  }
+
+  /**
+   * Add a grass tuft
+   */
+  _addGrassTuft(x, y, color) {
+    const g = this.add.graphics().setDepth(1).setPosition(x, y);
+    g.fillStyle(color);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI - Math.PI / 2;
+      const length = 6 + Math.random() * 4;
+      const gx = Math.cos(angle) * 4;
+      const gy = -4 + Math.random() * 2;
+      g.fillRect(gx - 1, gy, 2, length);
+    }
+  }
+
+  /**
+   * Add a small detail
+   */
+  _addSmallDetail(x, y, color) {
+    const g = this.add.graphics().setDepth(1).setPosition(x, y);
+    // Small dot or sparkle
+    g.fillStyle(color, 0.6);
+    g.fillCircle(0, 0, 2);
+  }
+
+  /**
+   * Add landmark decorations (trees, ruins, etc.)
+   */
+  _addLandmarks(levelIndex) {
+    const landmarkCount = 15;
+
+    for (let i = 0; i < landmarkCount; i++) {
+      const x = Phaser.Math.Between(200, C.WORLD_W - 200);
+      const y = Phaser.Math.Between(200, C.WORLD_H - 200);
+
+      switch (levelIndex) {
+        case 0: // Grass - Trees
+          this._addTree(x, y);
+          break;
+        case 1: // Sand - Cactus/ruins
+          this._addCactus(x, y);
+          break;
+        case 2: // Stone - Pillars
+          this._addPillar(x, y);
+          break;
+        case 3: // Lava - Charred remains
+          this._addCharredLog(x, y);
+          break;
+        case 4: // Void - Floating crystals
+          this._addCrystal(x, y);
+          break;
+      }
+    }
+  }
+
+  /**
+   * Add a tree landmark
+   */
+  _addTree(x, y) {
+    const g = this.add.graphics().setDepth(2).setPosition(x, y);
+    // Trunk
+    g.fillStyle(0x665544);
+    g.fillRect(-4, 0, 8, 20);
+    // Foliage (multiple circles)
+    g.fillStyle(0x336622);
+    g.fillCircle(0, -5, 12);
+    g.fillCircle(-6, -8, 10);
+    g.fillCircle(6, -8, 10);
+    g.fillCircle(0, -12, 10);
+    // Highlights
+    g.fillStyle(0x448833);
+    g.fillCircle(-3, -6, 5);
+    g.fillCircle(4, -10, 4);
+  }
+
+  /**
+   * Add a cactus
+   */
+  _addCactus(x, y) {
+    const g = this.add.graphics().setDepth(2).setPosition(x, y);
+    g.fillStyle(0x447733);
+    // Main body
+    g.fillEllipse(0, 0, 12, 24);
+    // Arms
+    g.fillEllipse(-8, -6, 8, 6);
+    g.fillEllipse(8, 2, 8, 6);
+    // Spines
+    g.fillStyle(0x224411);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const sx = Math.cos(angle) * 8;
+      const sy = (Math.sin(angle) * 12);
+      g.fillRect(sx - 1, sy, 2, 3);
+    }
+  }
+
+  /**
+   * Add a stone pillar
+   */
+  _addPillar(x, y) {
+    const g = this.add.graphics().setDepth(2).setPosition(x, y);
+    // Base
+    g.fillStyle(0x555566);
+    g.fillRect(-10, 0, 20, 30);
+    // Top
+    g.fillRect(-12, -5, 24, 8);
+    // Cracks
+    g.lineStyle(1, 0x333344);
+    g.moveTo(-4, 5);
+    g.lineTo(0, 20);
+    g.moveTo(4, 8);
+    g.lineTo(2, 18);
+    g.strokePath();
+  }
+
+  /**
+   * Add a charred log (lava biome)
+   */
+  _addCharredLog(x, y) {
+    const g = this.add.graphics().setDepth(2).setPosition(x, y);
+    g.fillStyle(0x222222);
+    g.fillEllipse(0, 0, 20, 8);
+    // Glowing embers
+    g.fillStyle(0xff4400, 0.8);
+    g.fillCircle(-5, -1, 2);
+    g.fillCircle(3, 1, 1.5);
+    g.fillCircle(7, -2, 1);
+  }
+
+  /**
+   * Add a floating crystal (void biome)
+   */
+  _addCrystal(x, y) {
+    const g = this.add.graphics().setDepth(2).setPosition(x, y);
+    // Crystal
+    g.fillStyle(0x8844ff, 0.7);
+    g.fillTriangle(0, -15, -8, 5, 8, 5);
+    // Glow
+    g.fillStyle(0xaa66ff, 0.3);
+    g.fillCircle(0, -2, 12);
+    // Floating animation will be added in update
+  }
   }
 
   // ═══════════════════════════════════════════════════════
@@ -395,13 +631,25 @@ export default class GameScene extends Phaser.Scene {
     enemy.takeDamage(damage);
     enemy.knockback(hitX, hitY);
     this._showDamageNumber(enemy.x, enemy.y - 10, damage, '#ffffff');
-    if (enemy.isDead()) this._killEnemy(enemy);
+
+    // Check if enemy is dead after damage
+    if (enemy.hp <= 0) {
+      // Trigger death behavior (explosion, etc)
+      if (enemy.onDeath) enemy.onDeath();
+      this._killEnemy(enemy);
+    }
     // Update boss bar
     if (enemy === this._currentBoss) this._updateBossBar();
   }
 
   _killEnemy(enemy) {
     if (!enemy.active) return;
+
+    // Trigger death behavior if not already triggered
+    if (enemy.hp <= 0 && enemy.onDeath) {
+      enemy.onDeath();
+    }
+
     this._kills++;
     this._score += enemy.scoreValue;
     this.player.onKill();

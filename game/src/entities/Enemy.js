@@ -20,6 +20,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scoreValue = enemyData.scoreValue;
     this.knockbackForce = enemyData.knockback || 80;
 
+    // Special behavior setup
+    this.behavior = enemyData.behavior || null;
+    this._behaviorTimer = 0;
+    this._lastBehaviorTime = 0;
+
     // Visual setup
     this.setDepth(5);
     this._buildGraphic();
@@ -56,20 +61,82 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   _drawEnemy(g, d, size) {
     const s = size;
-    // Body
-    g.fillStyle(d.bodyColor); g.fillRect(s / 2, s / 4, s, s * 1.2);
-    // Head
-    g.fillStyle(d.bodyColor); g.fillRect(s / 2 - 2, 0, s + 4, s / 2 + 4);
-    // Eyes (white + pupil)
+    const outlineColor = Phaser.Display.Color.IntegerToColor(d.bodyColor).darken(40).color;
+
+    // Draw shadow/outline for depth
+    g.fillStyle(outlineColor);
+    g.fillRect(s/2 + 2, s/4 + 2, s, s * 1.2);
+
+    // Body (main color with gradient simulation)
+    // Top half (lighter)
+    const lighterColor = Phaser.Display.Color.IntegerToColor(d.bodyColor).brighten(20).color;
+    g.fillStyle(lighterColor);
+    g.fillRect(s/2, s/4, s, s * 0.6);
+    // Bottom half (main color)
+    g.fillStyle(d.bodyColor);
+    g.fillRect(s/2, s/4 + s * 0.5, s, s * 0.7);
+
+    // Head with better shape
+    const headSize = s * 0.7;
+    g.fillStyle(d.bodyColor);
+    g.fillRect(s/2 - 2, 0, s + 4, headSize);
+
+    // Eyes (more expressive - bigger and cuter)
+    const eyeSize = s / 3;
+    const eyeY = 6;
+    // Left eye white
     g.fillStyle(0xffffff);
-    g.fillRect(s / 2 + 2, 4, s / 4, s / 4);
-    g.fillRect(s / 2 + s / 2, 4, s / 4, s / 4);
+    g.fillCircle(s/2 + s/4, eyeY, eyeSize);
+    // Right eye white
+    g.fillCircle(s/2 + s*0.7, eyeY, eyeSize);
+    // Pupils
     g.fillStyle(d.eyeColor);
-    g.fillRect(s / 2 + 3, 5, s / 6, s / 6);
-    g.fillRect(s / 2 + s / 2 + 1, 5, s / 6, s / 6);
-    // Outline
-    g.lineStyle(2, Phaser.Display.Color.IntegerToColor(d.bodyColor).darken(30).color);
-    g.strokeRect(s / 2, s / 4, s, s * 1.2);
+    g.fillCircle(s/2 + s/4 + 1, eyeY + 1, eyeSize/2);
+    g.fillCircle(s/2 + s*0.7 + 1, eyeY + 1, eyeSize/2);
+    // Eye highlights (make them cute!)
+    g.fillStyle(0xffffff);
+    g.fillCircle(s/2 + s/4 - 1, eyeY - 1, 2);
+    g.fillCircle(s/2 + s*0.7 - 1, eyeY - 1, 2);
+
+    // Mouth/face based on enemy type
+    if (d.id === 'SLIME' || d.id === 'GHOST' || d.id === 'FIRE_SLIME') {
+      // Cute smile
+      g.fillStyle(0x333333, 0.6);
+      g.fillRect(s/2 + s/3, eyeY + eyeSize + 2, s/3, 2);
+    } else if (d.id === 'SKELETON' || d.id === 'GHOST_WARRIOR') {
+      // Scary expression
+      g.fillStyle(0x333333, 0.8);
+      g.fillRect(s/2 + s/4, eyeY + eyeSize + 1, s/4, 3);
+      g.fillRect(s/2 + s*0.6, eyeY + eyeSize + 1, s/4, 3);
+    }
+
+    // Outline/shading
+    g.lineStyle(1, outlineColor, 0.5);
+    g.strokeRect(s/2, s/4, s, s * 1.2);
+    g.strokeRect(s/2 - 2, 0, s + 4, headSize);
+
+    // Add special details based on enemy type
+    if (d.id === 'FIRE_SLIME') {
+      // Flame particles
+      g.fillStyle(0xffaa00);
+      for (let i = 0; i < 3; i++) {
+        const px = s/2 + Math.random() * s;
+        const py = s/4 + Math.random() * s * 0.5;
+        g.fillRect(px, py, 3, 3);
+      }
+    } else if (d.id === 'GHOST' || d.id === 'GHOST_WARRIOR') {
+      // Eerie glow
+      g.fillStyle(0xaaccff, 0.3);
+      g.fillCircle(s, s/2, s/2);
+    } else if (d.id === 'STONE_GOLEM' || d.id === 'ROCK_GOLEM') {
+      // Cracks
+      g.lineStyle(2, 0x444444);
+      g.moveTo(s/2 + 4, s/4 + 4);
+      g.lineTo(s/2 + s/2, s/2);
+      g.moveTo(s/2 + s - 4, s/4 + 6);
+      g.lineTo(s/2 + s/2, s/2 + 4);
+      g.strokePath();
+    }
   }
 
   _drawBoss(g, d, size) {
@@ -142,7 +209,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount) {
     if (!this.active) return 0;
-    this.hp -= amount;
+
+    // Apply damage reduction for armored enemies
+    let actualDamage = amount;
+    if (this.behavior === 'armored' && this.enemyData.damageReduction) {
+      actualDamage = Math.round(amount * (1 - this.enemyData.damageReduction));
+    }
+
+    this.hp -= actualDamage;
     this._updateHpBar();
 
     // Hit flash
@@ -162,10 +236,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.scene.cameras.main.shake(300, 0.015);
     }
 
-    return amount;
+    return actualDamage;
   }
 
   knockback(fromX, fromY) {
+    // Armored enemies resist knockback
+    if (this.behavior === 'armored') return;
+
     const angle = Phaser.Math.Angle.Between(fromX, fromY, this.x, this.y);
     const force = this.knockbackForce;
     this.body.setVelocity(Math.cos(angle) * force, Math.sin(angle) * force);
@@ -175,6 +252,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   update(playerX, playerY, delta) {
     if (!this.active) return;
 
+    // Handle special behaviors
+    this._handleBehavior(playerX, playerY, delta);
+
     // Move toward player unless being knocked back
     if (this._knockTimer > 0) {
       this._knockTimer -= delta;
@@ -182,6 +262,108 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.body.velocity.x *= C.ENEMY.KNOCKBACK_DECAY;
       this.body.velocity.y *= C.ENEMY.KNOCKBACK_DECAY;
     } else {
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, playerX, playerY);
+      this.body.setVelocity(
+        Math.cos(angle) * this.speed,
+        Math.sin(angle) * this.speed,
+      );
+      this.setFlipX(playerX < this.x);
+    }
+
+    // Update HP bar position (cheap, just position update)
+    if (this._hpBg && this._hpFg) {
+      const y = this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y;
+      this._hpBg.setPosition(this.x, y);
+      this._hpFg.setPosition(this.x - C.ENEMY.HP_BAR_WIDTH / 2, y);
+    }
+  }
+
+  /**
+   * Handle special enemy behaviors
+   */
+  _handleBehavior(playerX, playerY, delta) {
+    if (!this.behavior) return;
+
+    switch (this.behavior) {
+      case 'teleport':
+        this._handleTeleport(playerX, playerY, delta);
+        break;
+      case 'explode':
+        // Explosion handled in death
+        break;
+      case 'armored':
+        // Damage reduction handled in takeDamage
+        break;
+    }
+  }
+
+  /**
+   * Handle teleport behavior for ghost warriors
+   */
+  _handleTeleport(playerX, playerY, delta) {
+    const teleportRange = this.enemyData.teleportRange || 300;
+    const teleportCooldown = this.enemyData.teleportCooldown || 3000;
+    const now = this.scene.time.now;
+
+    // Check if player is too far
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, playerX, playerY);
+
+    if (dist > teleportRange && now - this._lastBehaviorTime > teleportCooldown) {
+      // Teleport closer to player
+      const angle = Math.atan2(playerY - this.y, playerX - this.x);
+      const teleportDist = 100;
+      const newX = playerX - Math.cos(angle) * teleportDist + Phaser.Math.Between(-30, 30);
+      const newY = playerY - Math.sin(angle) * teleportDist + Phaser.Math.Between(-30, 30);
+
+      // Teleport effect
+      this.scene.spawnExplosion(this.x, this.y, 30, 0x6644aa);
+      this.setPosition(newX, newY);
+      this.scene.spawnExplosion(newX, newY, 30, 0x6644aa);
+
+      this._lastBehaviorTime = now;
+    }
+  }
+
+  /**
+   * Handle explosion on death
+   */
+  onDeath() {
+    if (this.behavior === 'explode' && this.enemyData.explosionRadius) {
+      const radius = this.enemyData.explosionRadius || 80;
+      const damage = this.enemyData.explosionDamage || 40;
+
+      // Damage nearby enemies
+      const nearbyEnemies = this.scene.getEnemiesInRadius(this.x, this.y, radius);
+      nearbyEnemies.forEach(e => {
+        if (e !== this && e.active) {
+          this.scene.hitEnemy(e, damage, this.x, this.y);
+        }
+      });
+
+      // Damage player if in range
+      const player = this.scene.player;
+      const playerDist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+      if (playerDist < radius) {
+        const actualDamage = player.takeDamage(damage);
+        if (actualDamage > 0) {
+          this.scene._showDamageNumber(player.x, player.y - 20, actualDamage, '#ff4444');
+          this.scene._updateHpBar();
+        }
+      }
+
+      // Visual effect
+      this.scene.spawnExplosion(this.x, this.y, radius, 0xff6622);
+      this.scene.cameras.main.shake(200, 0.02);
+    }
+  }
+
+  isDead() {
+    if (this.hp <= 0) {
+      this.onDeath();
+      return true;
+    }
+    return false;
+  }
       const angle = Phaser.Math.Angle.Between(this.x, this.y, playerX, playerY);
       this.body.setVelocity(
         Math.cos(angle) * this.speed,
