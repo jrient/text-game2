@@ -6,6 +6,39 @@ import LevelUpScene from './scenes/LevelUpScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import PauseScene from './scenes/PauseScene.js';
 
+// Detect device type and orientation
+function getScreenConfig() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+  const aspectRatio = screenWidth / screenHeight;
+
+  // Mobile or portrait screen - use portrait mode
+  if (isMobile || aspectRatio < 1) {
+    return {
+      width: 390,
+      height: 844,
+      isPortrait: true,
+      isMobile: true,
+    };
+  }
+  // Desktop or landscape screen - use landscape mode
+  else {
+    return {
+      width: 1280,
+      height: 720,
+      isPortrait: false,
+      isMobile: false,
+    };
+  }
+}
+
+const screenConfig = getScreenConfig();
+C.W = screenConfig.width;
+C.H = screenConfig.height;
+C.IS_PORTRAIT = screenConfig.isPortrait;
+C.IS_MOBILE = screenConfig.isMobile;
+
 const config = {
   type: Phaser.AUTO,
   parent: 'game-container',
@@ -17,6 +50,7 @@ const config = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    resizeInterval: 100, // Check for resize every 100ms
   },
   physics: {
     default: 'arcade',

@@ -133,14 +133,33 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Version badge
-    this.add.text(centerX, 195, 'v1.1', {
+    this.add.text(centerX, 195, 'v1.3', {
       fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#556677',
     }).setOrigin(0.5);
+
+    // PC control hint (only show in landscape)
+    if (!C.IS_PORTRAIT) {
+      this.add.text(centerX, C.H - 30, '推荐使用手柄或WASD控制 | 游戏内ESC暂停', {
+        fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#667788',
+      }).setOrigin(0.5);
+    }
   }
 
   _buildModeButtons() {
-    const W = C.W;
-    const btnY = 260;
+    const W = C.W, H = C.H;
+    const isPortrait = C.IS_PORTRAIT;
+
+    // Calculate positions based on orientation
+    let btnY, btnSpacing, scoreY;
+    if (isPortrait) {
+      btnY = 260;
+      btnSpacing = 85;
+      scoreY = btnY + btnSpacing * 2 + 20;
+    } else {
+      btnY = H * 0.4;
+      btnSpacing = 90;
+      scoreY = btnY + btnSpacing * 2 + 30;
+    }
 
     // Campaign button with improved style
     this._btnCampaign = this._makeStyledButton(W / 2, btnY, '⚔', '关卡模式', 0x2a4a8a, 0x3a5a9a, () => {
@@ -148,15 +167,15 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     // Endless button with improved style
-    this._btnEndless = this._makeStyledButton(W / 2, btnY + 85, '∞', '无尽模式', 0x8a4a2a, 0x9a5a3a, () => {
+    this._btnEndless = this._makeStyledButton(W / 2, btnY + btnSpacing, '∞', '无尽模式', 0x8a4a2a, 0x9a5a3a, () => {
       this.scene.start('Game', { mode: 'endless', levelIndex: 0 });
     });
 
-    // High score display
+    // High score display (position differently for portrait/landscape)
     const highScores = SaveSystem.getHighScores();
     const endlessHigh = SaveSystem.formatNumber(highScores.endless);
-    this.add.text(W / 2, btnY + 170, `无尽模式最高: ${endlessHigh}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#667788',
+    this.add.text(W / 2, scoreY, `无尽模式最高: ${endlessHigh}`, {
+      fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '8px' : '10px', color: '#667788',
     }).setOrigin(0.5);
 
     // Settings button (top right)

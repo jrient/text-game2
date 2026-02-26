@@ -68,8 +68,64 @@ export default class GameScene extends Phaser.Scene {
     this.scene.launch('Pause');
     this.scene.sleep('Pause');
 
+    // Show PC control hints
+    if (!C.IS_MOBILE && !C.IS_PORTRAIT) {
+      this._buildPCHints();
+    }
+
     // Fade in
     this.cameras.main.fadeIn(400, 0, 0, 0);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  PC CONTROL HINTS
+  // ═══════════════════════════════════════════════════════
+  _buildPCHints() {
+    // Bottom control hints bar
+    const hintText = 'WASD/方向键 移动  |  ESC 暂停';
+    this.add.text(C.W / 2, C.H - 15, hintText, {
+      fontFamily: "'Press Start 2P'",
+      fontSize: '10px',
+      color: '#556677',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+    // WASD indicators (bottom corners)
+    const keySize = 24;
+    const keyColor = 0x445566;
+    const activeColor = 0x6688aa;
+
+    // WASD keys display
+    const wasdContainer = this.add.container(40, C.H - 60).setScrollFactor(0).setDepth(99);
+
+    // W key
+    this._makeKey(wasdContainer, 0, -keySize, 'W', keyColor);
+    // A key
+    this._makeKey(wasdContainer, -keySize, 0, 'A', keyColor);
+    // S key
+    this._makeKey(wasdContainer, 0, keySize, 'S', keyColor);
+    // D key
+    this._makeKey(wasdContainer, keySize, 0, 'D', keyColor);
+
+    // Arrow keys (right side)
+    const arrowContainer = this.add.container(C.W - 40, C.H - 60).setScrollFactor(0).setDepth(99);
+
+    // Up arrow
+    this._makeKey(arrowContainer, 0, -keySize, '↑', keyColor);
+    // Left arrow
+    this._makeKey(arrowContainer, -keySize, 0, '←', keyColor);
+    // Down arrow
+    this._makeKey(arrowContainer, 0, keySize, '↓', keyColor);
+    // Right arrow
+    this._makeKey(arrowContainer, keySize, 0, '→', keyColor);
+  }
+
+  _makeKey(container, x, y, label, color) {
+    const bg = container.add.rectangle(x, y, 22, 22, 0x000000, 0.6);
+    const text = container.add.text(x, y, label, {
+      fontFamily: "'Press Start 2P'",
+      fontSize: '10px',
+      color: color,
+    }).setOrigin(0.5);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -372,10 +428,16 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ═══════════════════════════════════════════════════════
-  //  JOYSTICK (nipplejs) - Improved
+  //  JOYSTICK (nipplejs) - Only on mobile/touch devices
   // ═══════════════════════════════════════════════════════
   _buildJoystick() {
+    // Only show joystick on mobile devices or portrait mode
     if (typeof nipplejs === 'undefined') return;
+    if (!C.IS_MOBILE && !C.IS_PORTRAIT) {
+      // PC landscape mode - no joystick needed
+      this._showMobileHint = true;
+      return;
+    }
 
     // Get joystick side preference (default: left)
     const joystickSide = SettingsManager.get('joystickSide') || 'left';
@@ -418,52 +480,87 @@ export default class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     this._hud = this.add.container(0, 0).setScrollFactor(0).setDepth(50);
 
+    // Responsive layout
+    const isPortrait = C.IS_PORTRAIT;
+    const padding = isPortrait ? 10 : 20;
+
     // Top bar background
-    const topBg = this.add.rectangle(C.W / 2, 22, C.W, 44, 0x000000, 0.7);
+    const topBarHeight = isPortrait ? 44 : 50;
+    const topBg = this.add.rectangle(C.W / 2, topBarHeight / 2, C.W, topBarHeight, 0x000000, 0.7);
     this._hud.add(topBg);
 
     // HP bar
-    this._hpBarBg = this.add.rectangle(C.HP_BAR.x + C.HP_BAR.w / 2, C.HP_BAR.y + C.HP_BAR.h / 2, C.HP_BAR.w, C.HP_BAR.h, 0x440000);
-    this._hpBar   = this.add.rectangle(C.HP_BAR.x + C.HP_BAR.w / 2, C.HP_BAR.y + C.HP_BAR.h / 2, C.HP_BAR.w, C.HP_BAR.h, 0xff4444);
-    this._hpText  = this.add.text(C.HP_BAR.x + C.HP_BAR.w + 4, C.HP_BAR.y, '100', { fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#ff8888' });
+    const hpBar = C.HP_BAR;
+    this._hpBarBg = this.add.rectangle(
+      hpBar.x + hpBar.w / 2, hpBar.y + hpBar.h / 2,
+      hpBar.w, hpBar.h, 0x440000
+    );
+    this._hpBar = this.add.rectangle(
+      hpBar.x + hpBar.w / 2, hpBar.y + hpBar.h / 2,
+      hpBar.w, hpBar.h, 0xff4444
+    );
+    this._hpText = this.add.text(
+      hpBar.x + hpBar.w + 4, hpBar.y, '100',
+      { fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '7px' : '10px', color: '#ff8888' }
+    );
     this._hud.add([this._hpBarBg, this._hpBar, this._hpText]);
 
-    // Lv + Timer + Score (top center/right)
-    this._lvText    = this.add.text(200, 8, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#44ff88' }).setOrigin(0.5, 0);
-    this._timerText = this.add.text(C.W - 10, 8, '00:00', { fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffdd44' }).setOrigin(1, 0);
-    this._killText  = this.add.text(C.W - 10, 22, '💀 0', { fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#ffaaaa' }).setOrigin(1, 0);
+    // Stats display (Level, Timer, Kills) - responsive positioning
+    const fontSize = isPortrait ? '9px' : '12px';
+    const fontSizeSmall = isPortrait ? '7px' : '10px';
+
+    if (isPortrait) {
+      // Portrait: compact layout
+      this._lvText = this.add.text(200, 8, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#44ff88' }).setOrigin(0.5, 0);
+      this._timerText = this.add.text(C.W - 10, 8, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffdd44' }).setOrigin(1, 0);
+      this._killText = this.add.text(C.W - 10, 22, '💀 0', { fontFamily: "'Press Start 2P'", fontSizeSmall, color: '#ffaaaa' }).setOrigin(1, 0);
+    } else {
+      // Landscape: spread out layout
+      this._lvText = this.add.text(350, 15, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#44ff88' }).setOrigin(0.5, 0);
+      this._timerText = this.add.text(500, 15, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffdd44' }).setOrigin(0.5, 0);
+      this._killText = this.add.text(650, 15, '💀 0', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffaaaa' }).setOrigin(0.5, 0);
+    }
     this._hud.add([this._lvText, this._timerText, this._killText]);
 
     // Wave display (for endless mode)
-    this._waveText = this.add.text(C.W / 2, 50, 'Wave 1-1', {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#88aacc',
+    const waveY = isPortrait ? 50 : 75;
+    this._waveText = this.add.text(C.W / 2, waveY, 'Wave 1-1', {
+      fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#88aacc',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(50).setVisible(false);
     if (this.gameMode === 'endless') {
       this._waveText.setVisible(true);
     }
-    this._waveBg = this.add.rectangle(C.W / 2, 53, 100, 20, 0x000000, 0.4)
+    this._waveBg = this.add.rectangle(C.W / 2, waveY + 3, 120, 20, 0x000000, 0.4)
       .setScrollFactor(0).setDepth(49).setVisible(this.gameMode === 'endless');
 
     // EXP bar (below HP)
-    this._expBarBg = this.add.rectangle(C.W / 2, C.EXP_BAR.y + C.EXP_BAR.h / 2, C.EXP_BAR.w, C.EXP_BAR.h, 0x002244);
-    this._expBar   = this.add.rectangle(C.EXP_BAR.x, C.EXP_BAR.y + C.EXP_BAR.h / 2, 0, C.EXP_BAR.h, 0x4488ff).setOrigin(0, 0.5);
+    const expBar = C.EXP_BAR;
+    const expBarY = isPortrait ? expBar.y : 45;
+    this._expBarBg = this.add.rectangle(C.W / 2, expBarY + expBar.h / 2, expBar.w, expBar.h, 0x002244);
+    this._expBar = this.add.rectangle(expBar.x, expBarY + expBar.h / 2, 0, expBar.h, 0x4488ff).setOrigin(0, 0.5);
     this._hud.add([this._expBarBg, this._expBar]);
 
     // Boss HP bar (hidden by default)
-    this._bossHpBg  = this.add.rectangle(C.W / 2, C.H - 36, 300, 16, 0x440000).setVisible(false);
-    this._bossHpBar = this.add.rectangle(C.W / 2 - 150 + 1, C.H - 36, 298, 14, 0xff2200).setOrigin(0, 0.5).setVisible(false);
-    this._bossLabel = this.add.text(C.W / 2, C.H - 52, '', { fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ff8888' }).setOrigin(0.5).setVisible(false);
+    const bossY = C.H - (isPortrait ? 36 : 50);
+    const bossWidth = isPortrait ? 300 : 400;
+    this._bossHpBg = this.add.rectangle(C.W / 2, bossY, bossWidth, 16, 0x440000).setVisible(false);
+    this._bossHpBar = this.add.rectangle(C.W / 2 - bossWidth / 2 + 1, bossY, bossWidth - 2, 14, 0xff2200).setOrigin(0, 0.5).setVisible(false);
+    this._bossLabel = this.add.text(C.W / 2, bossY - 16, '', { fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#ff8888' }).setOrigin(0.5).setVisible(false);
     this._hud.add([this._bossHpBg, this._bossHpBar, this._bossLabel]);
 
-    // Pause button (top right)
-    const pauseBtn = this.add.text(C.W - 12, C.H - 40, '⏸', { fontSize: '22px' })
+    // Pause button
+    const pauseY = C.H - (isPortrait ? 40 : 30);
+    const pauseX = C.W - (isPortrait ? 12 : 20);
+    const pauseSize = isPortrait ? '22px' : '28px';
+    const pauseBtn = this.add.text(pauseX, pauseY, '⏸', { fontSize: pauseSize })
       .setOrigin(1, 1).setScrollFactor(0).setDepth(51).setInteractive({ useHandCursor: true });
     pauseBtn.on('pointerdown', () => this._togglePause());
 
     // Mode label
+    const modeLabelY = isPortrait ? 34 : 40;
     const modeLabel = this.gameMode === 'endless' ? '无尽模式' : `关卡 ${this.levelIndex + 1}: ${this.levelConfig.name}`;
-    this.add.text(C.W / 2, 34, modeLabel, {
-      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#667788',
+    this.add.text(C.W / 2, modeLabelY, modeLabel, {
+      fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#667788',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(50);
   }
 

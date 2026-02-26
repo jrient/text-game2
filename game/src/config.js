@@ -1,12 +1,14 @@
 // Global game configuration
 export const C = {
-  // Canvas dimensions (portrait mobile)
+  // Canvas dimensions (will be set by main.js based on screen)
   W: 390,
   H: 844,
+  IS_PORTRAIT: true,
+  IS_MOBILE: true,
 
-  // World size (camera scrolls within)
-  WORLD_W: 3000,
-  WORLD_H: 3000,
+  // World size (calculated based on orientation)
+  get WORLD_W() { return this.IS_PORTRAIT ? 3000 : 4000; },
+  get WORLD_H() { return this.IS_PORTRAIT ? 3000 : 2500; },
 
   TILE: 48, // tile size in pixels
 
@@ -27,9 +29,17 @@ export const C = {
     DARK:     0x080810,
   },
 
-  // HP bar
-  HP_BAR: { x: 10, y: 8, w: 180, h: 14 },
-  EXP_BAR: { x: 10, y: 26, w: 370, h: 6 },
+  // Responsive HUD positions
+  get HP_BAR() {
+    return this.IS_PORTRAIT
+      ? { x: 10, y: 8, w: 180, h: 14 }
+      : { x: 20, y: 20, w: 300, h: 20 };
+  },
+  get EXP_BAR() {
+    return this.IS_PORTRAIT
+      ? { x: 10, y: 26, w: 370, h: 6 }
+      : { x: 20, y: 45, w: 600, h: 8 };
+  },
 
   // Physics
   PHYSICS: {
