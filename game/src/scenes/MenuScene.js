@@ -3,6 +3,8 @@ import { LEVELS } from '../data/levels.js';
 import { SettingsManager } from '../systems/SettingsManager.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
 import { musicSystem } from '../systems/MusicSystem.js';
+import { achievementManager } from '../systems/AchievementManager.js';
+import { ACHIEVEMENT_CATEGORIES } from '../data/achievements.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
@@ -272,6 +274,43 @@ export default class MenuScene extends Phaser.Scene {
       settingsBg.lineStyle(2, 0x3355aa, 0.6);
       settingsBg.strokeRoundedRect(C.W - 48, 12, 36, 36, 6);
     });
+
+    // Achievement button (trophy icon) - to the left of settings
+    const achievementBg = this.add.graphics();
+    achievementBg.fillStyle(0x443322, 0.8);
+    achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
+    achievementBg.lineStyle(2, 0x664422, 0.6);
+    achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
+    achievementBg.setDepth(99);
+
+    // Show count of unlocked achievements
+    const unlockedCount = achievementManager.unlocked.size;
+    const totalCount = Object.keys(window.ACHIEVEMENTS || {}).length;
+    const achievementIcon = this.add.text(C.W - 72, 30, '🏆', {
+      fontSize: '20px',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(100);
+
+    achievementIcon.on('pointerdown', () => {
+      this._showAchievementPanel();
+      musicSystem.playSound('menuSelect');
+    });
+
+    achievementIcon.on('pointerover', () => {
+      achievementIcon.setScale(1.15);
+      achievementBg.clear();
+      achievementBg.fillStyle(0x664433, 0.9);
+      achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
+      achievementBg.lineStyle(2, 0x886644, 0.8);
+      achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
+    });
+    achievementIcon.on('pointerout', () => {
+      achievementIcon.setScale(1);
+      achievementBg.clear();
+      achievementBg.fillStyle(0x443322, 0.8);
+      achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
+      achievementBg.lineStyle(2, 0x664422, 0.6);
+      achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
+    });
   }
 
   _buildSettingsPanel() {
@@ -373,6 +412,114 @@ export default class MenuScene extends Phaser.Scene {
     this.tweens.add({
       targets: this._settingsPanel, alpha: 0, duration: 150,
       onComplete: () => this._settingsPanel.setVisible(false),
+    });
+  }
+
+  _buildAchievementPanel() {
+    this._achievementPanel = this.add.container(0, 0).setVisible(false);
+    const W = C.W, H = C.H;
+
+    // Overlay bg
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
+    bg.lineStyle(4, 0x665544); bg.strokeRect(10, 10, W - 20, H - 20);
+    this._achievementPanel.add(bg);
+
+    // Title
+    const titleBg = this.add.text(W / 2 + 2, 82, '🏆 成就', {
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#332200',
+    }).setOrigin(0.5);
+    const title = this.add.text(W / 2, 80, '🏆 成就', {
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ffaa44',
+      stroke: '#332200', strokeThickness: 4,
+    }).setOrigin(0.5);
+    this._achievementPanel.add([titleBg, title]);
+
+    // Progress summary
+    const unlockedCount = achievementManager.unlocked.size;
+    const totalCount = Object.keys(ACHIEVEMENTS).length;
+    const progressPercent = Math.floor((unlockedCount / totalCount) * 100);
+    this.add.text(W / 2, 120, `进度: ${unlockedCount}/${totalCount} (${progressPercent}%)`, {
+      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#ffcc66',
+    }).setOrigin(0.5);
+
+    // Get achievements grouped by category
+    const allAchievements = achievementManager.getAllAchievements();
+
+    // Display achievements by category
+    let currentY = 150;
+    const categoryOrder = Object.entries(ACHIEVEMENT_CATEGORIES)
+      .sort(([, a], [, b]) => a.order - b.order);
+
+    categoryOrder.forEach(([catKey, catInfo]) => {
+      const catAchievements = allAchievements[catKey]?.achievements || [];
+      if (catAchievements.length === 0) return;
+
+      // Category header
+      const catHeader = this.add.text(W / 2, currentY, `${catInfo.icon} ${catInfo.name}`, {
+        fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#88aacc',
+      }).setOrigin(0.5);
+      this._achievementPanel.add(catHeader);
+      currentY += 25;
+
+      // Achievement entries
+      catAchievements.forEach(ach => {
+        const achColor = ach.unlocked ? '#44ff88' : '#556677';
+        const achIcon = ach.unlocked ? ach.icon : '🔒';
+        const achText = this.add.text(W / 2, currentY, `${achIcon} ${ach.name}`, {
+          fontFamily: "'Press Start 2P'", fontSize: '8px', color: achColor,
+        }).setOrigin(0.5);
+        this._achievementPanel.add(achText);
+
+        // Description (smaller, dim)
+        const descText = this.add.text(W / 2, currentY + 12, ach.description, {
+          fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#445566',
+        }).setOrigin(0.5);
+        this._achievementPanel.add(descText);
+
+        // Progress for incomplete achievements
+        if (!ach.unlocked) {
+          const progress = achievementManager.getProgress(ach.id);
+          if (progress) {
+            const progText = this.add.text(W / 2, currentY + 22, `${progress.current}/${progress.max}`, {
+              fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#667788',
+            }).setOrigin(0.5);
+            this._achievementPanel.add(progText);
+            currentY += 10;
+          }
+        }
+
+        currentY += 28;
+      });
+
+      currentY += 10;
+    });
+
+    // Make the panel scrollable if too tall
+    if (currentY > H - 80) {
+      // TODO: Add scroll functionality
+    }
+
+    // Back button
+    const back = this.add.text(W / 2, H - 50, '◀ 返回', {
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    back.on('pointerdown', () => this._hideAchievementPanel());
+    this._achievementPanel.add(back);
+  }
+
+  _showAchievementPanel() {
+    if (!this._achievementPanel) this._buildAchievementPanel();
+    this._achievementPanel.setVisible(true);
+    this._achievementPanel.setAlpha(0);
+    this.tweens.add({ targets: this._achievementPanel, alpha: 1, duration: 200 });
+  }
+
+  _hideAchievementPanel() {
+    this.tweens.add({
+      targets: this._achievementPanel, alpha: 0, duration: 150,
+      onComplete: () => this._achievementPanel.setVisible(false),
     });
   }
 

@@ -153,6 +153,46 @@ export class SaveSystem {
   }
 
   /**
+   * Get statistics formatted for achievements
+   */
+  static getStatsForAchievements() {
+    const stats = this.getStats();
+    return {
+      totalKills: stats.totalKills,
+      totalBossKills: stats.totalBossKills,
+      totalOrbs: 0, // Not tracked yet
+      totalScore: 0, // Not tracked yet
+    };
+  }
+
+  /**
+   * Get unlocked achievements
+   */
+  static getAchievements() {
+    const data = this.load();
+    return data.unlocks.achievements || [];
+  }
+
+  /**
+   * Unlock an achievement
+   */
+  static unlockAchievement(id) {
+    const data = this.load();
+    if (!data.unlocks.achievements.includes(id)) {
+      data.unlocks.achievements.push(id);
+      this.save(data);
+    }
+  }
+
+  /**
+   * Check if achievement is unlocked
+   */
+  static isAchievementUnlocked(id) {
+    const data = this.load();
+    return data.unlocks.achievements.includes(id);
+  }
+
+  /**
    * Get high scores
    */
   static getHighScores() {

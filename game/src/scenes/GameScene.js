@@ -8,6 +8,7 @@ import WaveSystem from '../systems/WaveSystem.js';
 import ObjectPool from '../systems/ObjectPool.js';
 import { SettingsManager } from '../systems/SettingsManager.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
+import { achievementManager } from '../systems/AchievementManager.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -55,6 +56,9 @@ export default class GameScene extends Phaser.Scene {
     this.skillSystem = new SkillSystem(this);
     this.waveSystem  = new WaveSystem(this, this.levelConfig, this.gameMode);
 
+    // Achievement system - start tracking session
+    achievementManager.startSession(this.gameMode);
+
     // Collisions
     this._setupCollisions();
 
@@ -75,6 +79,94 @@ export default class GameScene extends Phaser.Scene {
 
     // Fade in
     this.cameras.main.fadeIn(400, 0, 0, 0);
+
+    // Achievement toast system
+    this._achievementToasts = [];
+    this._toastTimer = this.time.addEvent({
+      delay: 5000,
+      callback: this._updateAchievementToasts,
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ACHIEVEMENT TOAST NOTIFICATIONS
+  // ═══════════════════════════════════════════════════════
+  _updateAchievementToasts() {
+    if (this._paused || this._gameOver) return;
+
+    const newAchievements = achievementManager.getNewlyUnlocked();
+    if (newAchievements.length > 0) {
+      newAchievements.forEach(ach => this._showAchievementToast(ach.achievement));
+    }
+  }
+
+  _showAchievementToast(achievement) {
+    // Don't show duplicate toasts
+    if (this._achievementToasts.some(t => t.id === achievement.id)) return;
+
+    const isPortrait = C.IS_PORTRAIT;
+    const toastWidth = isPortrait ? 300 : 400;
+    const toastHeight = 50;
+    const toastX = C.W / 2;
+    const toastY = isPortrait ? C.H - 100 : C.H - 80;
+
+    // Background
+    const bg = this.add.rectangle(toastX, toastY, toastWidth, toastHeight, 0x112233, 0.95)
+      .setStrokeStyle(2, 0x4488ff)
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    // Icon
+    const icon = this.add.text(toastX - toastWidth / 2 + 30, toastY, achievement.icon, {
+      fontSize: '24px',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+
+    // Name
+    const name = this.add.text(toastX - toastWidth / 2 + 55, toastY - 8, achievement.name, {
+      fontFamily: "'Press Start 2P'",
+      fontSize: isPortrait ? '9px' : '11px',
+      color: '#44ff88',
+    }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+
+    // Description
+    const desc = this.add.text(toastX - toastWidth / 2 + 55, toastY + 10, achievement.description, {
+      fontFamily: "'Press Start 2P'",
+      fontSize: isPortrait ? '6px' : '8px',
+      color: '#88aacc',
+    }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+
+    // Container
+    const container = this.add.container(toastX, toastY, [bg, icon, name, desc])
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setAlpha(0);
+
+    // Animate in
+    this.tweens.add({
+      targets: container,
+      alpha: 1,
+      y: toastY - 10,
+      duration: 300,
+      ease: 'Power2',
+    });
+
+    // Animate out after delay
+    this.tweens.add({
+      targets: container,
+      alpha: 0,
+      y: toastY - 30,
+      duration: 300,
+      delay: 4000,
+      ease: 'Power2',
+      onComplete: () => {
+        container.destroy();
+        this._achievementToasts = this._achievementToasts.filter(t => t.id !== achievement.id);
+      },
+    });
+
+    this._achievementToasts.push({ id: achievement.id, container });
   }
 
   // ═══════════════════════════════════════════════════════
@@ -660,7 +752,10 @@ export default class GameScene extends Phaser.Scene {
   _onPlayerEnemyOverlap(player, enemy) {
     if (!enemy.active || !player || player.invincible) return;
     const dmg = player.takeDamage(enemy.damage);
-    if (dmg > 0) this._showDamageNumber(player.x, player.y - 20, dmg, '#ff4444');
+    if (dmg > 0) {
+      this._showDamageNumber(player.x, player.y - 20, dmg, '#ff4444');
+      achievementManager.recordDamage();
+    }
     this._updateHpBar();
     if (player.hp <= 0) this._triggerGameOver();
   }
@@ -672,6 +767,8 @@ export default class GameScene extends Phaser.Scene {
     const expGain = Math.ceil(orb.value * this.difficultyMult.expMult);
     this._gainExp(expGain);
     this.playSound('pickup');
+    // Track achievement
+    achievementManager.recordOrb();
   }
 
   // ═══════════════════════════════════════════════════════
@@ -694,6 +791,8 @@ export default class GameScene extends Phaser.Scene {
     const choices = this.skillSystem.getChoices();
     this._paused = true;
     this.physics.pause(); // freeze all physics during card selection
+    // Track achievement
+    achievementManager.updateLevel(this._playerLevel);
     this.time.delayedCall(50, () => {
       this.scene.launch('LevelUp', { choices, playerLevel: this._playerLevel });
     });
@@ -701,9 +800,23 @@ export default class GameScene extends Phaser.Scene {
 
   _onLevelUpChoice(choice) {
     this.skillSystem.applyChoice(choice);
+    // Track achievement: add weapon if it's a new weapon
+    if (choice.type === 'new_weapon') {
+      achievementManager.addWeapon(choice.id);
+    }
+    // Track total skill levels
+    const totalLevels = this._getTotalSkillLevels();
+    achievementManager.updateSkillLevels(totalLevels);
     this._paused = false;
     this.physics.resume();
     this.spawnHitParticle(this.player.x, this.player.y, 0x44ff88);
+  }
+
+  _getTotalSkillLevels() {
+    let total = 0;
+    this.skillSystem.weapons.forEach(w => { if (!w._evolved) total += w.level; });
+    this.skillSystem.passives.forEach(level => total += level);
+    return total;
   }
 
   // ═══════════════════════════════════════════════════════
@@ -751,6 +864,10 @@ export default class GameScene extends Phaser.Scene {
     this._score += enemy.scoreValue;
     this.player.onKill();
     this._killText.setText(`💀 ${this._kills}`);
+
+    // Track achievement
+    achievementManager.recordKill(enemy.isBoss);
+    achievementManager.updateScore(this._score);
 
     // Drop experience orbs
     const value = enemy.expDrop;
@@ -994,6 +1111,9 @@ export default class GameScene extends Phaser.Scene {
       bossKills: bossKills,
       highestCombo: 0, // TODO: track combo
     });
+
+    // End achievement session
+    achievementManager.endSession(won);
   }
 
   _cleanup() {
@@ -1003,8 +1123,11 @@ export default class GameScene extends Phaser.Scene {
     if (this._particlePool) { this._particlePool.destroy(); }
     if (this._damageTextPool) { this._damageTextPool.destroy(); }
     if (this._explosionPool) { this._explosionPool.destroy(); }
+    if (this._toastTimer) { this._toastTimer.remove(); this._toastTimer = null; }
     this.scene.stop('Pause');
     this.scene.stop('LevelUp');
+    // Clear any active toasts
+    this._achievementToasts = [];
   }
 
   // ═══════════════════════════════════════════════════════

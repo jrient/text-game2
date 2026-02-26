@@ -1,4 +1,6 @@
 import { C } from '../config.js';
+import { achievementManager } from '../systems/AchievementManager.js';
+import { SaveSystem } from '../systems/SaveSystem.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -9,6 +11,15 @@ export default class BootScene extends Phaser.Scene {
 
   create() {
     this._generateTextures();
+
+    // Initialize achievement manager with saved data
+    const savedAchievements = SaveSystem.getAchievements();
+    achievementManager.load({ unlocked: savedAchievements });
+
+    // Make achievement manager available globally
+    window.achievementManager = achievementManager;
+    window.saveSystem = SaveSystem;
+
     // Complete fake loading bar
     const bar = document.getElementById('loading-bar');
     if (bar) bar.style.width = '100%';
