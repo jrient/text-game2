@@ -1,10 +1,13 @@
 /**
  * Save system for game progress and statistics
- * Uses localStorage for persistence
+ * Uses localStorage for persistence with optional cloud sync
  */
+import * as CloudService from '../services/CloudService.js';
+
 export class SaveSystem {
   static STORAGE_KEY = 'pixelSurvivor_save';
   static STATS_KEY = 'pixelSurvivor_stats';
+  static CLOUD_ENABLED = true; // Enable cloud sync
 
   /**
    * Get default save data structure
@@ -253,5 +256,91 @@ export class SaveSystem {
    */
   static formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  CLOUD SYNC
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Save to cloud (async)
+   */
+  static async saveToCloud() {
+    if (!this.CLOUD_ENABLED) return false;
+
+    try {
+      const data = this.load();
+      await CloudService.saveToCloud(data);
+      return true;
+    } catch (e) {
+      console.warn('Cloud save failed:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Load from cloud (async)
+   */
+  static async loadFromCloud() {
+    if (!this.CLOUD_ENABLED) return null;
+
+    try {
+      const result = await CloudService.loadFromCloud();
+      return result.data;
+    } catch (e) {
+      console.warn('Cloud load failed:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Check if cloud is available
+   */
+  static async isCloudAvailable() {
+    if (!this.CLOUD_ENABLED) return false;
+    return await CloudService.checkBackendHealth();
+  }
+
+  /**
+   * Submit score to leaderboard (async)
+   */
+  static async submitScore(scoreData) {
+    if (!this.CLOUD_ENABLED) return false;
+
+    try {
+      await CloudService.submitScore(scoreData);
+      return true;
+    } catch (e) {
+      console.warn('Score submission failed:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Get leaderboard (async)
+   */
+  static async getLeaderboard(mode = 'endless', levelIndex = 0) {
+    if (!this.CLOUD_ENABLED) return [];
+
+    try {
+      return await CloudService.getLeaderboard(mode, levelIndex);
+    } catch (e) {
+      console.warn('Get leaderboard failed:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Get player rank (async)
+   */
+  static async getPlayerRank(mode = 'endless', levelIndex = 0) {
+    if (!this.CLOUD_ENABLED) return null;
+
+    try {
+      return await CloudService.getPlayerRank(mode, levelIndex);
+    } catch (e) {
+      console.warn('Get player rank failed:', e);
+      return null;
+    }
   }
 }

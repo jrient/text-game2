@@ -173,6 +173,11 @@ export default class MenuScene extends Phaser.Scene {
       this.scene.start('Game', { mode: 'endless', levelIndex: 0 });
     });
 
+    // Leaderboard button
+    this._btnLeaderboard = this._makeStyledButton(W / 2, btnY + btnSpacing * 2, '🏆', '排行榜', 0x6a5a2a, 0x8a7a4a, () => {
+      this._showLeaderboard();
+    });
+
     // High score display (position differently for portrait/landscape)
     const highScores = SaveSystem.getHighScores();
     const endlessHigh = SaveSystem.formatNumber(highScores.endless);
@@ -520,6 +525,140 @@ export default class MenuScene extends Phaser.Scene {
     this.tweens.add({
       targets: this._achievementPanel, alpha: 0, duration: 150,
       onComplete: () => this._achievementPanel.setVisible(false),
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  LEADERBOARD PANEL
+  // ═══════════════════════════════════════════════════════
+
+  async _buildLeaderboardPanel() {
+    this._leaderboardPanel = this.add.container(0, 0).setVisible(false);
+    const W = C.W, H = C.H;
+
+    // Overlay bg
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
+    bg.lineStyle(4, 0x556644); bg.strokeRect(10, 10, W - 20, H - 20);
+    this._leaderboardPanel.add(bg);
+
+    // Title
+    const title = this.add.text(W / 2, 60, '🏆 排行榜', {
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ffcc44',
+      stroke: '#332200', strokeThickness: 4,
+    }).setOrigin(0.5);
+    this._leaderboardPanel.add(title);
+
+    // Mode selector
+    this._leaderboardMode = 'endless';
+    const modeBtn = this.add.text(W / 2, 100, `模式: 无尽 ▼`, {
+      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#88aacc',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    modeBtn.on('pointerdown', () => {
+      this._leaderboardMode = this._leaderboardMode === 'endless' ? 'campaign' : 'endless';
+      modeBtn.setText(`模式: ${this._leaderboardMode === 'endless' ? '无尽' : '关卡'} ▼`);
+      this._refreshLeaderboard();
+    });
+    this._leaderboardPanel.add(modeBtn);
+
+    // Loading text
+    this._leaderboardLoading = this.add.text(W / 2, H / 2, '加载中...', {
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#667788',
+    }).setOrigin(0.5);
+    this._leaderboardPanel.add(this._leaderboardLoading);
+
+    // Leaderboard entries container
+    this._leaderboardEntries = this.add.container(0, 140);
+    this._leaderboardPanel.add(this._leaderboardEntries);
+
+    // Back button
+    const back = this.add.text(W / 2, H - 50, '◀ 返回', {
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    back.on('pointerdown', () => this._hideLeaderboardPanel());
+    this._leaderboardPanel.add(back);
+  }
+
+  async _refreshLeaderboard() {
+    // Clear existing entries
+    this._leaderboardEntries.removeAll(true);
+
+    // Show loading
+    this._leaderboardLoading.setVisible(true);
+
+    try {
+      const leaderboard = await SaveSystem.getLeaderboard(this._leaderboardMode, 0, 50);
+      this._leaderboardLoading.setVisible(false);
+
+      if (leaderboard.length === 0) {
+        this._leaderboardEntries.add(this.add.text(C.W / 2, 50, '暂无数据', {
+          fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#556677',
+        }).setOrigin(0.5));
+        return;
+      }
+
+      // Display entries
+      const startY = 20;
+      const lineHeight = 45;
+
+      leaderboard.slice(0, 10).forEach((entry, i) => {
+        const y = startY + i * lineHeight;
+        const isPlayer = entry.player_id === window.CloudService?.getPlayerId?.();
+
+        // Rank badge
+        const rankColor = i === 0 ? '#ffdd00' : i === 1 ? '#cccccc' : i === 2 ? '#cd7f32' : '#556677';
+        const rankBg = this.add.graphics();
+        rankBg.fillStyle(0x223344, 0.8);
+        rankBg.fillRoundedRect(30, y - 12, 40, 24, 4);
+        this._leaderboardEntries.add(rankBg);
+
+        const rankText = this.add.text(50, y, `#${entry.rank}`, {
+          fontFamily: "'Press Start 2P'", fontSize: '10px', color: rankColor,
+        }).setOrigin(0.5);
+        this._leaderboardEntries.add(rankText);
+
+        // Player name
+        const nameColor = isPlayer ? '#44ff88' : '#ffffff';
+        const nameText = this.add.text(90, y - 5, entry.player_name.substring(0, 12), {
+          fontFamily: "'Press Start 2P'", fontSize: '9px', color: nameColor,
+        }).setOrigin(0, 0.5);
+        this._leaderboardEntries.add(nameText);
+
+        // Score
+        const scoreText = this.add.text(C.W - 40, y - 5, SaveSystem.formatNumber(entry.score), {
+          fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffaa44',
+        }).setOrigin(1, 0.5);
+        this._leaderboardEntries.add(scoreText);
+
+        // Stats (small)
+        const statsText = this.add.text(90, y + 8, `Lv${entry.level} ${entry.kills}击杀 ${entry.time}秒`, {
+          fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#556677',
+        }).setOrigin(0, 0.5);
+        this._leaderboardEntries.add(statsText);
+      });
+
+    } catch (e) {
+      this._leaderboardLoading.setText('加载失败');
+      console.error('Leaderboard error:', e);
+    }
+  }
+
+  async _showLeaderboardPanel() {
+    if (!this._leaderboardPanel) await this._buildLeaderboardPanel();
+    this._leaderboardPanel.setVisible(true);
+    this._leaderboardPanel.setAlpha(0);
+    this.tweens.add({ targets: this._leaderboardPanel, alpha: 1, duration: 200 });
+
+    // Load leaderboard data
+    this._refreshLeaderboard();
+  }
+
+  _hideLeaderboardPanel() {
+    this.tweens.add({
+      targets: this._leaderboardPanel, alpha: 0, duration: 150,
+      onComplete: () => this._leaderboardPanel.setVisible(false),
     });
   }
 

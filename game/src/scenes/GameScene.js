@@ -1114,6 +1114,19 @@ export default class GameScene extends Phaser.Scene {
 
     // End achievement session
     achievementManager.endSession(won);
+
+    // Submit score to leaderboard (async, fire and forget)
+    SaveSystem.submitScore({
+      mode: this.gameMode,
+      level_index: this.levelIndex,
+      score: this._score,
+      kills: this._kills,
+      level: this._playerLevel,
+      time: this._elapsedSeconds,
+    });
+
+    // Sync to cloud (async, fire and forget)
+    SaveSystem.saveToCloud();
   }
 
   _cleanup() {
