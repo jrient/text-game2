@@ -7,6 +7,7 @@ import SkillSystem from '../systems/SkillSystem.js';
 import WaveSystem from '../systems/WaveSystem.js';
 import ObjectPool from '../systems/ObjectPool.js';
 import { SettingsManager } from '../systems/SettingsManager.js';
+import { SaveSystem } from '../systems/SaveSystem.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -15,6 +16,10 @@ export default class GameScene extends Phaser.Scene {
     this.gameMode = data.mode || 'endless';
     this.levelIndex = data.levelIndex || 0;
     this.levelConfig = LEVELS[this.levelIndex] || LEVELS[0];
+
+    // Load difficulty settings
+    this.difficulty = SettingsManager.get('difficulty') || 'normal';
+    this.difficultyMult = SettingsManager.getDifficultyMultiplier();
   }
 
   create() {
@@ -193,6 +198,16 @@ export default class GameScene extends Phaser.Scene {
     this._killText  = this.add.text(C.W - 10, 22, '💀 0', { fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#ffaaaa' }).setOrigin(1, 0);
     this._hud.add([this._lvText, this._timerText, this._killText]);
 
+    // Wave display (for endless mode)
+    this._waveText = this.add.text(C.W / 2, 50, 'Wave 1-1', {
+      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#88aacc',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(50).setVisible(false);
+    if (this.gameMode === 'endless') {
+      this._waveText.setVisible(true);
+    }
+    this._waveBg = this.add.rectangle(C.W / 2, 53, 100, 20, 0x000000, 0.4)
+      .setScrollFactor(0).setDepth(49).setVisible(this.gameMode === 'endless');
+
     // EXP bar (below HP)
     this._expBarBg = this.add.rectangle(C.W / 2, C.EXP_BAR.y + C.EXP_BAR.h / 2, C.EXP_BAR.w, C.EXP_BAR.h, 0x002244);
     this._expBar   = this.add.rectangle(C.EXP_BAR.x, C.EXP_BAR.y + C.EXP_BAR.h / 2, 0, C.EXP_BAR.h, 0x4488ff).setOrigin(0, 0.5);
@@ -320,7 +335,9 @@ export default class GameScene extends Phaser.Scene {
   _onOrbPickup(player, orb) {
     if (!orb.active) return;
     orb.setActive(false).setVisible(false);
-    this._gainExp(orb.value);
+    // Apply difficulty multiplier to experience
+    const expGain = Math.ceil(orb.value * this.difficultyMult.expMult);
+    this._gainExp(expGain);
     this.playSound('pickup');
   }
 
@@ -579,6 +596,10 @@ export default class GameScene extends Phaser.Scene {
     if (this._gameOver) return;
     this._gameOver = true;
     this.playSound('die');
+
+    // Save statistics
+    this._saveSessionStats(false);
+
     this.physics.pause();
     this.cameras.main.fade(800, 0, 0, 0);
     this.time.delayedCall(900, () => {
@@ -595,6 +616,10 @@ export default class GameScene extends Phaser.Scene {
     if (this._gameOver) return;
     this._gameOver = true;
     this.cameras.main.flash(600, 255, 255, 100, false);
+
+    // Save statistics
+    this._saveSessionStats(true);
+
     this.time.delayedCall(600, () => {
       this.physics.pause();
       this.cameras.main.fade(600, 0, 0, 0);
@@ -606,6 +631,23 @@ export default class GameScene extends Phaser.Scene {
           mode: this.gameMode, levelIndex: this.levelIndex,
         });
       });
+    });
+  }
+
+  _saveSessionStats(won) {
+    const bossKills = won && this.gameMode === 'campaign' ? 1 : 0;
+
+    // Update high scores
+    SaveSystem.updateHighScore(this.gameMode, this.levelIndex, this._score);
+
+    // Update statistics
+    SaveSystem.updateStats({
+      playTime: this._elapsedSeconds,
+      kills: this._kills,
+      level: this._playerLevel,
+      died: !won,
+      bossKills: bossKills,
+      highestCombo: 0, // TODO: track combo
     });
   }
 
@@ -652,13 +694,30 @@ export default class GameScene extends Phaser.Scene {
       else if (orb.isAttracted()) orb.stopAttract();
     });
 
-    // Wave system
+    // Wave system update
     this.waveSystem.update(delta, this._elapsedSeconds);
+
+    // Check wave/batch completion (for endless mode)
+    if (this.gameMode === 'endless' && this.waveSystem.isWaveComplete()) {
+      this.waveSystem.advanceBatch();
+      this._updateWaveDisplay();
+    } else {
+      // Update wave display
+      this._updateWaveDisplay();
+    }
 
     // Skill / weapon updates
     this.skillSystem.update(time, delta);
 
     // HUD
     this._updateHpBar();
+  }
+
+  _updateWaveDisplay() {
+    if (this.gameMode !== 'endless') return;
+    const wave = this.waveSystem.getWave();
+    const batch = this.waveSystem.getBatch();
+    const totalBatches = this.waveSystem.batchesPerWave;
+    this._waveText.setText(`Wave ${wave + 1}-${batch + 1}/${totalBatches}`);
   }
 }

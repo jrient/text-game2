@@ -79,6 +79,47 @@ export const SKILLS = {
     ],
   },
 
+  // ===== NEW WEAPONS =====
+  HOMING_MISSILE: {
+    id: 'HOMING_MISSILE', name: '追踪导弹', type: 'weapon', icon: '🚀',
+    description: '自动追踪并撞击敌人',
+    maxLevel: 5, evolvesInto: null, evolveRequires: null,
+    weaponClass: 'HomingMissile',
+    levelStats: [
+      { damage: 25, cooldown: 1800, count: 1, speed: 180, turnSpeed: 0.06 },
+      { damage: 32, cooldown: 1700, count: 1, speed: 190, turnSpeed: 0.07 },
+      { damage: 40, cooldown: 1600, count: 2, speed: 200, turnSpeed: 0.08 },
+      { damage: 50, cooldown: 1500, count: 2, speed: 210, turnSpeed: 0.09 },
+      { damage: 62, cooldown: 1400, count: 3, speed: 220, turnSpeed: 0.10 },
+    ],
+  },
+  POISON_CLOUD: {
+    id: 'POISON_CLOUD', name: '毒雾', type: 'weapon', icon: '☠️',
+    description: '释放持续伤害毒雾区域',
+    maxLevel: 5, evolvesInto: null, evolveRequires: null,
+    weaponClass: 'PoisonCloud',
+    levelStats: [
+      { damage: 8, cooldown: 3000, radius: 70, duration: 3000 },
+      { damage: 12, cooldown: 2800, radius: 80, duration: 3500 },
+      { damage: 17, cooldown: 2600, radius: 90, duration: 4000 },
+      { damage: 23, cooldown: 2400, radius: 100, duration: 4500 },
+      { damage: 30, cooldown: 2200, radius: 110, duration: 5000 },
+    ],
+  },
+  FROST_SHARD: {
+    id: 'FROST_SHARD', name: '冰冻弹', type: 'weapon', icon: '❄️',
+    description: '冰冻敌人并造成伤害',
+    maxLevel: 5, evolvesInto: null, evolveRequires: null,
+    weaponClass: 'FrostShard',
+    levelStats: [
+      { damage: 18, cooldown: 1500, count: 1, slowDuration: 1500, slowFactor: 0.6 },
+      { damage: 24, cooldown: 1400, count: 1, slowDuration: 1800, slowFactor: 0.55 },
+      { damage: 31, cooldown: 1300, count: 2, slowDuration: 2100, slowFactor: 0.5 },
+      { damage: 39, cooldown: 1200, count: 2, slowDuration: 2400, slowFactor: 0.45 },
+      { damage: 48, cooldown: 1100, count: 3, slowDuration: 2700, slowFactor: 0.4 },
+    ],
+  },
+
   // ===== PASSIVES =====
   POWER_UP: {
     id: 'POWER_UP', name: '攻击强化', type: 'passive', icon: '⚔️',
@@ -148,6 +189,44 @@ export const SKILLS = {
       { healOnKill: 1 }, { healOnKill: 2 },
       { healOnKill: 3 }, { healOnKill: 5 },
       { healOnKill: 8 },
+    ],
+  },
+
+  // ===== NEW PASSIVES =====
+  CRITICAL_HIT: {
+    id: 'CRITICAL_HIT', name: '暴击', type: 'passive', icon: '💥',
+    description: '几率造成双倍伤害',
+    maxLevel: 5,
+    levelStats: [
+      { critChance: 0.08, critMultiplier: 2.0 },
+      { critChance: 0.12, critMultiplier: 2.2 },
+      { critChance: 0.16, critMultiplier: 2.4 },
+      { critChance: 0.20, critMultiplier: 2.6 },
+      { critChance: 0.25, critMultiplier: 3.0 },
+    ],
+  },
+  DODGE: {
+    id: 'DODGE', name: '闪避', type: 'passive', icon: '💨',
+    description: '几率完全避免伤害',
+    maxLevel: 5,
+    levelStats: [
+      { dodgeChance: 0.08 },
+      { dodgeChance: 0.12 },
+      { dodgeChance: 0.16 },
+      { dodgeChance: 0.20 },
+      { dodgeChance: 0.25 },
+    ],
+  },
+  EXP_BOOST: {
+    id: 'EXP_BOOST', name: '经验加成', type: 'passive', icon: '📚',
+    description: '获取更多经验值',
+    maxLevel: 5,
+    levelStats: [
+      { expMultiplier: 1.15 },
+      { expMultiplier: 1.30 },
+      { expMultiplier: 1.45 },
+      { expMultiplier: 1.60 },
+      { expMultiplier: 1.80 },
     ],
   },
 };
