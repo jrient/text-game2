@@ -3,7 +3,7 @@
  * Handles communication with backend API
  */
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';  // 使用相对路径，通过nginx代理
 const API_KEY = 'pixel-survivor-2024-secret';
 
 /**
