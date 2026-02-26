@@ -1,4 +1,5 @@
 import BaseWeapon from './BaseWeapon.js';
+import { C } from '../config.js';
 
 export default class RotatingAxe extends BaseWeapon {
   constructor(scene, skillData) {
@@ -15,8 +16,16 @@ export default class RotatingAxe extends BaseWeapon {
     const stats = this.getStats();
     for (let i = 0; i < stats.count; i++) {
       // Simple rectangle as the spinning axe (pixel art style)
-      const axe = this.scene.add.rectangle(0, 0, 20, 10, 0xffaa22).setDepth(9);
-      const glow = this.scene.add.rectangle(0, 0, 24, 14, 0xff8800, 0.3).setDepth(8);
+      const axe = this.scene.add.rectangle(
+        0, 0,
+        C.AXE.WIDTH, C.AXE.HEIGHT,
+        0xffaa22
+      ).setDepth(9);
+      const glow = this.scene.add.rectangle(
+        0, 0,
+        C.AXE.GLOW_WIDTH, C.AXE.GLOW_HEIGHT,
+        C.AXE.GLOW_COLOR, C.AXE.GLOW_ALPHA
+      ).setDepth(8);
       axe._glow = glow;
       this._axes.push(axe);
     }
@@ -28,7 +37,18 @@ export default class RotatingAxe extends BaseWeapon {
     const stats = this.getStats();
     this._angle += (stats.angularSpeed / 1000) * delta;
 
+    // Only check enemies near the player (optimization)
     const enemies = this.scene.enemyGroup.getChildren();
+    const nearbyEnemies = [];
+    const checkRange = stats.orbitRadius + C.AXE.CHECK_RANGE_BUFFER;
+
+    for (const e of enemies) {
+      if (!e.active) continue;
+      const distToPlayer = Phaser.Math.Distance.Between(player.x, player.y, e.x, e.y);
+      if (distToPlayer < checkRange) {
+        nearbyEnemies.push(e);
+      }
+    }
 
     this._axes.forEach((axe, i) => {
       const offset = (360 / this._axes.length) * i;
@@ -39,19 +59,19 @@ export default class RotatingAxe extends BaseWeapon {
       axe.setPosition(ax, ay).setRotation(rad + Math.PI / 4);
       if (axe._glow) axe._glow.setPosition(ax, ay).setRotation(rad + Math.PI / 4);
 
-      // Manual distance-based hit detection (no physics group needed)
-      enemies.forEach(e => {
-        if (!e.active) return;
-        const dist = Phaser.Math.Distance.Between(ax, ay, e.x, e.y);
-        if (dist < e.displayWidth / 2 + 12) {
+      // Manual distance-based hit detection (only for nearby enemies)
+      const hitRangeSq = C.AXE.HIT_RADIUS ** 2; // Use squared distance to avoid sqrt
+      for (const e of nearbyEnemies) {
+        const distSq = (ax - e.x) ** 2 + (ay - e.y) ** 2;
+        if (distSq < hitRangeSq) {
           const lastHit = this._hitCooldowns.get(e) || 0;
-          if (time - lastHit > 450) {
+          if (time - lastHit > C.AXE.HIT_COOLDOWN) {
             this._hitCooldowns.set(e, time);
             this.scene.hitEnemy(e, this.getDamage(stats.damage), ax, ay);
             this.scene.spawnHitParticle(ax, ay, 0xffaa22);
           }
         }
-      });
+      }
     });
 
     // Remove cooldowns for dead enemies

@@ -5,6 +5,8 @@ import Enemy from '../entities/Enemy.js';
 import ExpOrb from '../entities/ExpOrb.js';
 import SkillSystem from '../systems/SkillSystem.js';
 import WaveSystem from '../systems/WaveSystem.js';
+import ObjectPool from '../systems/ObjectPool.js';
+import { SettingsManager } from '../systems/SettingsManager.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -29,6 +31,10 @@ export default class GameScene extends Phaser.Scene {
     this._elapsedSeconds = 0;
     this._bulletOverlaps = [];
     this._audioCtx = null;
+    this._soundEnabled = SettingsManager.get('soundEnabled');
+
+    // Object pools for performance
+    this._buildObjectPools();
 
     // Build game world
     this._buildBackground();
@@ -125,18 +131,22 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ═══════════════════════════════════════════════════════
-  //  JOYSTICK (nipplejs)
+  //  JOYSTICK (nipplejs) - Improved
   // ═══════════════════════════════════════════════════════
   _buildJoystick() {
     if (typeof nipplejs === 'undefined') return;
-    // Only on touch devices
-    const isTouchDevice = navigator.maxTouchPoints > 0;
+
+    // Get joystick side preference (default: left)
+    const joystickSide = SettingsManager.get('joystickSide') || 'left';
 
     const zone = document.createElement('div');
     zone.id = 'joystick-zone';
+    const position = joystickSide === 'left'
+      ? 'left: 20px; bottom: 20px;'
+      : 'right: 20px; bottom: 20px;';
     zone.style.cssText = `
-      position: fixed; left: 0; bottom: 0;
-      width: 160px; height: 160px;
+      position: fixed; ${position}
+      width: 140px; height: 140px;
       z-index: 100; pointer-events: all;
     `;
     document.body.appendChild(zone);
@@ -144,8 +154,10 @@ export default class GameScene extends Phaser.Scene {
 
     this._nipple = nipplejs.create({
       zone, mode: 'static',
-      position: { left: '80px', bottom: '80px' },
-      color: 'rgba(255,255,255,0.3)', size: 100,
+      position: joystickSide === 'left'
+        ? { left: '90px', bottom: '90px' }
+        : { right: '90px', bottom: '90px' },
+      color: 'rgba(68, 255, 136, 0.4)', size: 120,
     });
 
     this._nipple.on('move', (e, data) => {
@@ -209,8 +221,37 @@ export default class GameScene extends Phaser.Scene {
     try { this._audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   }
 
+  // ═══════════════════════════════════════════════════════
+  //  OBJECT POOLS (for performance)
+  // ═══════════════════════════════════════════════════════
+  _buildObjectPools() {
+    // Pool for hit particles
+    this._particlePool = new ObjectPool(this, () => {
+      return this.add.rectangle(
+        0, 0,
+        C.COMBAT.HIT_PARTICLE_SIZE, C.COMBAT.HIT_PARTICLE_SIZE,
+        0xffffff
+      ).setDepth(20);
+    }, C.POOL.PARTICLE_SIZE);
+
+    // Pool for damage numbers
+    this._damageTextPool = new ObjectPool(this, () => {
+      return this.add.text(0, 0, '', {
+        fontFamily: "'Press Start 2P'",
+        fontSize: C.COMBAT.DAMAGE_NUMBER_FONT_SIZE + 'px',
+        color: '#ffffff',
+        stroke: '#000000', strokeThickness: 2,
+      }).setDepth(30).setOrigin(0.5);
+    }, C.POOL.DAMAGE_TEXT_SIZE);
+
+    // Pool for explosion rings (graphics objects)
+    this._explosionPool = new ObjectPool(this, () => {
+      return this.add.graphics().setDepth(15);
+    }, C.POOL.EXPLOSION_SIZE);
+  }
+
   playSound(key) {
-    if (!this._audioCtx) return;
+    if (!this._audioCtx || !this._soundEnabled) return;
     const ctx = this._audioCtx;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -409,46 +450,53 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ═══════════════════════════════════════════════════════
-  //  VISUAL EFFECTS
+  //  VISUAL EFFECTS (using object pools for performance)
   // ═══════════════════════════════════════════════════════
   spawnHitParticle(x, y, color) {
-    const count = 4;
+    const count = C.COMBAT.HIT_PARTICLE_COUNT;
     for (let i = 0; i < count; i++) {
-      const px = this.add.rectangle(x, y, 4, 4, color).setDepth(20);
+      const px = this._particlePool.get();
+      px.setPosition(x, y).setFillStyle(color).setAlpha(1).setScale(1);
       const angle = Math.random() * Math.PI * 2;
-      const speed = 40 + Math.random() * 60;
+      const speed = C.COMBAT.HIT_PARTICLE_MIN_SPEED + Math.random() * (C.COMBAT.HIT_PARTICLE_MAX_SPEED - C.COMBAT.HIT_PARTICLE_MIN_SPEED);
       this.tweens.add({
         targets: px,
         x: x + Math.cos(angle) * speed,
         y: y + Math.sin(angle) * speed,
         alpha: 0, scaleX: 0, scaleY: 0,
-        duration: 200 + Math.random() * 200,
-        onComplete: () => px.destroy(),
+        duration: C.COMBAT.HIT_PARTICLE_MIN_DURATION + Math.random() * (C.COMBAT.HIT_PARTICLE_MAX_DURATION - C.COMBAT.HIT_PARTICLE_MIN_DURATION),
+        onComplete: () => this._particlePool.release(px),
       });
     }
   }
 
   spawnExplosion(x, y, radius, color) {
-    const ring = this.add.graphics().setDepth(15);
-    ring.lineStyle(3, color, 0.9);
-    ring.strokeCircle(x, y, 4);
+    const ring = this._explosionPool.get();
+    ring.clear()
+      .lineStyle(C.FX.EXPLOSION_LINE_WIDTH, color, C.FX.EXPLOSION_ALPHA)
+      .strokeCircle(x, y, C.FX.EXPLOSION_START_RADIUS)
+      .setAlpha(1).setScale(1);
     this.tweens.add({
-      targets: ring, scaleX: radius / 4, scaleY: radius / 4, alpha: 0,
-      duration: 300,
-      onComplete: () => ring.destroy(),
+      targets: ring,
+      scaleX: radius / C.FX.EXPLOSION_START_RADIUS,
+      scaleY: radius / C.FX.EXPLOSION_START_RADIUS,
+      alpha: 0,
+      duration: C.FX.EXPLOSION_DURATION,
+      onComplete: () => this._explosionPool.release(ring),
     });
     this.spawnHitParticle(x, y, color);
     this.spawnHitParticle(x, y, 0xffffff);
   }
 
   _showDamageNumber(x, y, value, color) {
-    const txt = this.add.text(x, y, `-${value}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color,
-      stroke: '#000000', strokeThickness: 2,
-    }).setDepth(30).setOrigin(0.5);
+    const txt = this._damageTextPool.get();
+    txt.setPosition(x, y).setText(`-${value}`).setColor(color).setAlpha(1).setY(y);
     this.tweens.add({
-      targets: txt, y: y - 28, alpha: 0, duration: 700,
-      onComplete: () => txt.destroy(),
+      targets: txt,
+      y: y - C.COMBAT.DAMAGE_NUMBER_RISE,
+      alpha: 0,
+      duration: C.COMBAT.DAMAGE_NUMBER_DURATION,
+      onComplete: () => this._damageTextPool.release(txt),
     });
   }
 
@@ -565,6 +613,9 @@ export default class GameScene extends Phaser.Scene {
     if (this._nipple) { this._nipple.destroy(); this._nipple = null; }
     if (this._joystickZoneEl) { this._joystickZoneEl.remove(); this._joystickZoneEl = null; }
     if (this.skillSystem) { this.skillSystem.destroy(); }
+    if (this._particlePool) { this._particlePool.destroy(); }
+    if (this._damageTextPool) { this._damageTextPool.destroy(); }
+    if (this._explosionPool) { this._explosionPool.destroy(); }
     this.scene.stop('Pause');
     this.scene.stop('LevelUp');
   }

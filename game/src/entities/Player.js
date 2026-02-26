@@ -7,16 +7,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.setDepth(10);
-    this.body.setSize(20, 28);
-    this.body.setOffset(6, 4);
+    this.body.setSize(C.PLAYER.BODY_WIDTH, C.PLAYER.BODY_HEIGHT);
+    this.body.setOffset(C.PLAYER.BODY_OFFSET_X, C.PLAYER.BODY_OFFSET_Y);
 
     // Stats
-    this.maxHp = 100;
-    this.hp = 100;
-    this.speed = 150;
+    this.maxHp = C.PLAYER.BASE_HP;
+    this.hp = C.PLAYER.BASE_HP;
+    this.speed = C.PLAYER.BASE_SPEED;
     this.damageMultiplier = 1.0;
     this.damageReduction = 0.0;
-    this.pickupRange = 80;
+    this.pickupRange = C.PLAYER.BASE_PICKUP_RANGE;
     this.healOnKill = 0;
     this.speedBonus = 0;
     this.hpBonus = 0;
@@ -25,14 +25,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // State
     this.invincible = false;
-    this.invincibleTime = 800;
+    this.invincibleTime = C.PLAYER.INVINCIBLE_TIME;
     this._lastDir = new Phaser.Math.Vector2(1, 0);
 
     // Visual: hurt flash
     this._hurtTween = null;
 
     // Shadow
-    this._shadow = scene.add.ellipse(x, y + 14, 24, 8, 0x000000, 0.35).setDepth(9);
+    this._shadow = scene.add.ellipse(
+      x, y + C.PLAYER.SHADOW_OFFSET_Y,
+      C.PLAYER.SHADOW_WIDTH, C.PLAYER.SHADOW_HEIGHT,
+      0x000000, 0.35
+    ).setDepth(9);
   }
 
   update(dx, dy) {
@@ -46,7 +50,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.body.setVelocity(0, 0);
     }
-    this._shadow.setPosition(this.x, this.y + 14);
+    this._shadow.setPosition(this.x, this.y + C.PLAYER.SHADOW_OFFSET_Y);
   }
 
   takeDamage(amount) {
@@ -58,8 +62,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Hurt flash
     if (this._hurtTween) this._hurtTween.stop();
     this._hurtTween = this.scene.tweens.add({
-      targets: this, alpha: 0.3, duration: 80,
-      yoyo: true, repeat: 3,
+      targets: this,
+      alpha: C.PLAYER.HURT_FLASH_ALPHA,
+      duration: C.PLAYER.HURT_FLASH_DURATION,
+      yoyo: true,
+      repeat: C.PLAYER.HURT_FLASH_REPEAT,
       onComplete: () => {
         this.setAlpha(1);
         this.invincible = false;
@@ -91,7 +98,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (stats.hpBonus !== undefined) {
       const oldBonus = this.hpBonus;
       this.hpBonus = stats.hpBonus;
-      this.maxHp = 100 + this.hpBonus;
+      this.maxHp = C.PLAYER.BASE_HP + this.hpBonus;
       this.hp = Math.min(this.hp + (this.hpBonus - oldBonus), this.maxHp);
     }
     if (stats.cooldownReduction !== undefined) this.cooldownReduction = stats.cooldownReduction;

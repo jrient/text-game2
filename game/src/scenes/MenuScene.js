@@ -1,5 +1,6 @@
 import { C } from '../config.js';
 import { LEVELS } from '../data/levels.js';
+import { SettingsManager } from '../systems/SettingsManager.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
@@ -83,6 +84,83 @@ export default class MenuScene extends Phaser.Scene {
     // Endless button
     this._btnEndless = this._makeButton(W / 2, btnY + 80, '∞  无尽模式', 0x553300, 0x774400, () => {
       this.scene.start('Game', { mode: 'endless', levelIndex: 0 });
+    });
+
+    // Settings button (top right)
+    this._buildSettingsButton();
+  }
+
+  _buildSettingsButton() {
+    const settingsIcon = this.add.text(C.W - 20, 20, '⚙', {
+      fontSize: '20px',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(100);
+
+    settingsIcon.on('pointerdown', () => {
+      this._showSettingsPanel();
+    });
+
+    settingsIcon.on('pointerover', () => settingsIcon.setScale(1.1));
+    settingsIcon.on('pointerout', () => settingsIcon.setScale(1));
+  }
+
+  _buildSettingsPanel() {
+    this._settingsPanel = this.add.container(0, 0).setVisible(false);
+    const W = C.W, H = C.H;
+
+    // Overlay bg
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.85); bg.fillRect(0, 0, W, H);
+    this._settingsPanel.add(bg);
+
+    // Title
+    const title = this.add.text(W / 2, 80, '设置', {
+      fontFamily: "'Press Start 2P'", fontSize: '16px', color: '#44ff88',
+    }).setOrigin(0.5);
+    this._settingsPanel.add(title);
+
+    // Sound toggle
+    const soundOn = SettingsManager.get('soundEnabled');
+    this._soundToggleText = this.add.text(W / 2, 160, `音效: ${soundOn ? '开启' : '关闭'}`, {
+      fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#ffffff',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    this._soundToggleText.on('pointerdown', () => {
+      const newState = SettingsManager.toggle('soundEnabled');
+      this._soundToggleText.setText(`音效: ${newState ? '开启' : '关闭'}`);
+    });
+    this._settingsPanel.add(this._soundToggleText);
+
+    // Joystick side toggle
+    const joystickSide = SettingsManager.get('joystickSide') || 'left';
+    this._joystickToggleText = this.add.text(W / 2, 220, `摇杆: ${joystickSide === 'left' ? '左侧' : '右侧'}`, {
+      fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#ffffff',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    this._joystickToggleText.on('pointerdown', () => {
+      const current = SettingsManager.get('joystickSide') || 'left';
+      const newState = current === 'left' ? 'right' : 'left';
+      SettingsManager.set('joystickSide', newState);
+      this._joystickToggleText.setText(`摇杆: ${newState === 'left' ? '左侧' : '右侧'}`);
+    });
+    this._settingsPanel.add(this._joystickToggleText);
+
+    // Back button
+    const back = this.add.text(W / 2, H - 60, '◀ 返回', {
+      fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#aabbcc',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    back.on('pointerdown', () => this._hideSettingsPanel());
+    this._settingsPanel.add(back);
+  }
+
+  _showSettingsPanel() {
+    if (!this._settingsPanel) this._buildSettingsPanel();
+    this._settingsPanel.setVisible(true);
+    this._settingsPanel.setAlpha(0);
+    this.tweens.add({ targets: this._settingsPanel, alpha: 1, duration: 200 });
+  }
+
+  _hideSettingsPanel() {
+    this.tweens.add({
+      targets: this._settingsPanel, alpha: 0, duration: 150,
+      onComplete: () => this._settingsPanel.setVisible(false),
     });
   }
 

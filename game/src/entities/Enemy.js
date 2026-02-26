@@ -98,32 +98,39 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   _buildHpBar() {
     if (!this.isBoss) {
-      // Small HP bar above enemy
-      this._hpBg = this.scene.add.graphics().setDepth(6);
-      this._hpFg = this.scene.add.graphics().setDepth(7);
+      // Small HP bar above enemy (use rectangle for better performance)
+      const w = C.ENEMY.HP_BAR_WIDTH, h = C.ENEMY.HP_BAR_HEIGHT;
+      this._hpBg = this.scene.add.rectangle(
+        this.x, this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y,
+        w, h, 0x330000
+      ).setDepth(6);
+      this._hpFg = this.scene.add.rectangle(
+        this.x, this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y,
+        w, h, 0x44ff44
+      ).setOrigin(0, 0.5).setDepth(7);
     }
     this._updateHpBar();
   }
 
   _updateHpBar() {
-    const w = this.isBoss ? 200 : 28;
-    const h = this.isBoss ? 14 : 4;
-    const ratio = Math.max(0, this.hp / this.maxHp);
-
     if (this.isBoss) {
       // Boss HP bar handled by GameScene HUD
       return;
     }
-    if (!this._hpBg) return;
-    const bx = this.x - w / 2;
-    const by = this.y - this.displayHeight / 2 - 8;
-    this._hpBg.clear();
-    this._hpBg.fillStyle(0x330000); this._hpBg.fillRect(bx, by, w, h);
-    this._hpFg.clear();
-    if (ratio > 0) {
-      const col = ratio > 0.5 ? 0x44ff44 : ratio > 0.25 ? 0xffaa00 : 0xff3333;
-      this._hpFg.fillStyle(col); this._hpFg.fillRect(bx, by, w * ratio, h);
-    }
+    if (!this._hpBg || !this._hpFg) return;
+
+    const w = C.ENEMY.HP_BAR_WIDTH;
+    const ratio = Math.max(0, this.hp / this.maxHp);
+    const y = this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y;
+
+    // Update positions (follow enemy)
+    this._hpBg.setPosition(this.x, y);
+    this._hpFg.setPosition(this.x - w / 2, y);
+
+    // Update width and color (only when damaged)
+    this._hpFg.displayWidth = w * ratio;
+    const col = ratio > 0.5 ? 0x44ff44 : ratio > 0.25 ? 0xffaa00 : 0xff3333;
+    this._hpFg.setFillStyle(col);
   }
 
   scaleStats(multiplier) {
@@ -140,15 +147,18 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Hit flash
     this.scene.tweens.add({
-      targets: this, alpha: 0.4, duration: 60, yoyo: true,
+      targets: this,
+      alpha: C.ENEMY.HIT_FLASH_ALPHA,
+      duration: C.ENEMY.HIT_FLASH_DURATION,
+      yoyo: true,
     });
 
     // Boss phase 2
-    if (this.isBoss && !this._phase2 && this.hp / this.maxHp <= 0.5) {
+    if (this.isBoss && !this._phase2 && this.hp / this.maxHp <= C.ENEMY.BOSS_PHASE2_HP_THRESHOLD) {
       this._phase2 = true;
-      this.speed *= 1.4;
-      this.damage = Math.round(this.damage * 1.3);
-      this.setTint(0xff6600);
+      this.speed *= C.ENEMY.BOSS_PHASE2_SPEED_MULT;
+      this.damage = Math.round(this.damage * C.ENEMY.BOSS_PHASE2_DMG_MULT);
+      this.setTint(C.ENEMY.BOSS_PHASE2_TINT);
       this.scene.cameras.main.shake(300, 0.015);
     }
 
@@ -169,8 +179,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this._knockTimer > 0) {
       this._knockTimer -= delta;
       // Decay knockback
-      this.body.velocity.x *= 0.92;
-      this.body.velocity.y *= 0.92;
+      this.body.velocity.x *= C.ENEMY.KNOCKBACK_DECAY;
+      this.body.velocity.y *= C.ENEMY.KNOCKBACK_DECAY;
     } else {
       const angle = Phaser.Math.Angle.Between(this.x, this.y, playerX, playerY);
       this.body.setVelocity(
@@ -180,7 +190,12 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(playerX < this.x);
     }
 
-    this._updateHpBar();
+    // Update HP bar position (cheap, just position update)
+    if (this._hpBg && this._hpFg) {
+      const y = this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y;
+      this._hpBg.setPosition(this.x, y);
+      this._hpFg.setPosition(this.x - C.ENEMY.HP_BAR_WIDTH / 2, y);
+    }
   }
 
   isDead() { return this.hp <= 0; }
@@ -188,6 +203,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   destroy() {
     if (this._hpBg) { this._hpBg.destroy(); this._hpBg = null; }
     if (this._hpFg) { this._hpFg.destroy(); this._hpFg = null; }
+    // Clear from cooldowns map if exists
     super.destroy();
   }
 }
