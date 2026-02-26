@@ -1,6 +1,7 @@
 import { C } from '../config.js';
 import { achievementManager } from '../systems/AchievementManager.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
+import * as CloudService from '../services/CloudService.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -19,6 +20,7 @@ export default class BootScene extends Phaser.Scene {
     // Make achievement manager available globally
     window.achievementManager = achievementManager;
     window.saveSystem = SaveSystem;
+    window.CloudService = CloudService;
 
     // Complete fake loading bar
     const bar = document.getElementById('loading-bar');

@@ -794,54 +794,6 @@ export default class MenuScene extends Phaser.Scene {
 
     return container;
   }
-    });
-    container.add(numTxt);
-
-    // Name
-    const nameTxt = this.add.text(-w / 2 + 60, -h / 2 + 12, lvl.name, {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#ffffff',
-    });
-    container.add(nameTxt);
-
-    // Description
-    const descTxt = this.add.text(-w / 2 + 60, -h / 2 + 36, lvl.description, {
-      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#aabbcc',
-      wordWrap: { width: 240 },
-    });
-    container.add(descTxt);
-
-    // Duration badge
-    const durTxt = this.add.text(w / 2 - 10, -h / 2 + 12, `${lvl.duration}s`, {
-      fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffdd44',
-    }).setOrigin(1, 0);
-    container.add(durTxt);
-
-    // Play button
-    const playBtn = this.add.text(w / 2 - 10, h / 2 - 14, '▶ 开始', {
-      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#44ff88',
-    }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
-    playBtn.on('pointerdown', () => {
-      this.cameras.main.flash(200, 255, 255, 255, false);
-      this.time.delayedCall(150, () => {
-        this.scene.start('Game', { mode: 'campaign', levelIndex: idx });
-      });
-    });
-    container.add(playBtn);
-
-    // Make whole card clickable
-    const zone = this.add.zone(0, 0, w, h).setInteractive({ useHandCursor: true });
-    zone.on('pointerover', () => { bg.clear(); bg.fillStyle(0x1a2255, 0.95); bg.fillRoundedRect(-w / 2, -h / 2, w, h, 4); bg.lineStyle(2, 0x4466cc); bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 4); });
-    zone.on('pointerout',  () => { bg.clear(); bg.fillStyle(0x111133, 0.9); bg.fillRoundedRect(-w / 2, -h / 2, w, h, 4); bg.lineStyle(2, 0x3355aa); bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 4); });
-    zone.on('pointerdown', () => {
-      this.cameras.main.flash(200, 255, 255, 255, false);
-      this.time.delayedCall(150, () => {
-        this.scene.start('Game', { mode: 'campaign', levelIndex: idx });
-      });
-    });
-    container.add(zone);
-
-    return container;
-  }
 
   _buildFooter() {
     const footerY = C.H - 25;
