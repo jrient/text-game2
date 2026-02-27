@@ -117,82 +117,93 @@ export default class BootScene extends Phaser.Scene {
   }
 
   /**
-   * Create enhanced player character (Vampire Survivors inspired)
+   * Create cute anime-style player character
    */
   _makeEnhancedPlayer() {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
     const s = 40;
 
     // Shadow/outline for depth
-    g.fillStyle(0x0a0a1a);
-    g.fillRect(11, 11, 18, 22);
-    g.fillRect(10, 3, 20, 14);
+    g.fillStyle(0x1a1a2a, 0.5);
+    g.fillCircle(20, 20, 14);
 
-    // Body (dark armor)
-    // Top part
-    g.fillStyle(0x1a1a3a);
-    g.fillRect(10, 10, 20, 12);
-    // Bottom part (slightly lighter)
+    // Hair (fluffy pink gradient)
+    g.fillStyle(0xff6b9d);
+    g.fillCircle(20, 18, 14);
+    g.fillStyle(0xff8ab8);
+    g.fillCircle(20, 17, 12);
+    // Hair tufts
+    g.fillStyle(0xff6b9d);
+    g.fillCircle(14, 12, 5);
+    g.fillCircle(26, 12, 5);
+    g.fillCircle(20, 10, 4);
+    g.fillCircle(12, 16, 4);
+    g.fillCircle(28, 16, 4);
+
+    // Face (skin tone)
+    g.fillStyle(0xffe4d6);
+    g.fillCircle(20, 20, 10);
+    // Blush
+    g.fillStyle(0xffb4c4, 0.7);
+    g.fillCircle(14, 21, 2.5);
+    g.fillCircle(26, 21, 2.5);
+
+    // Eyes (big anime eyes with sparkle)
+    // Left eye white
+    g.fillStyle(0xffffff);
+    g.fillCircle(15, 19, 4);
+    g.fillCircle(25, 19, 4);
+    // Iris (purple with gradient)
+    g.fillStyle(0x9966ff);
+    g.fillCircle(15, 19, 3);
+    g.fillCircle(25, 19, 3);
+    g.fillStyle(0xbb88ff);
+    g.fillCircle(15, 19, 2);
+    g.fillCircle(25, 19, 2);
+    // Pupils
     g.fillStyle(0x222244);
-    g.fillRect(10, 20, 20, 11);
+    g.fillCircle(15, 19, 1.2);
+    g.fillCircle(25, 19, 1.2);
+    // Eye highlights (sparkle)
+    g.fillStyle(0xffffff);
+    g.fillCircle(13, 17, 1.5);
+    g.fillCircle(23, 17, 1.5);
+    g.fillCircle(16, 20, 0.8);
+    g.fillCircle(26, 20, 0.8);
 
-    // Head with better proportions
-    g.fillStyle(0x1a1a3a);
-    g.fillRect(11, 4, 18, 12);
+    // Cute mouth
+    g.fillStyle(0xff8899, 0.8);
+    g.fillCircle(20, 24, 2);
+    g.fillStyle(0xffffff, 0.6);
+    g.fillCircle(20, 24.5, 1);
 
-    // Visor (cyan glow instead of face)
-    g.fillStyle(0x00e8ff);
-    g.fillRect(13, 8, 14, 4);
+    // Hair accessory (bow)
+    g.fillStyle(0xffcc00);
+    g.fillRect(8, 14, 6, 3);
+    g.fillRect(9, 13, 4, 5);
+    g.fillCircle(9, 15.5, 2.5);
+    g.fillCircle(13, 15.5, 2.5);
+    g.fillStyle(0xff8844);
+    g.fillCircle(11, 15.5, 1.5);
 
-    // Eyes (visor bar - single glowing strip)
-    g.fillStyle(0x00e8ff, 0.9);
-    g.fillRect(14, 8, 12, 3);
+    // Body (cute outfit)
+    g.fillStyle(0x4488ff);
+    g.fillRect(14, 28, 12, 8);
+    g.fillStyle(0x66aaff);
+    g.fillRect(14, 28, 12, 3);
 
-    // Visor highlight
-    g.fillStyle(0xffffff, 0.5);
-    g.fillRect(15, 8, 5, 1);
+    // Arms
+    g.fillStyle(0xffe4d6);
+    g.fillCircle(10, 32, 4);
+    g.fillCircle(30, 32, 4);
 
-    // Helmet (dark with cyan stripe)
-    g.fillStyle(0x2a2a4a);
-    g.fillRect(11, 2, 18, 5);
-    g.fillRect(10, 3, 4, 4);  // Side left
-    g.fillRect(26, 3, 4, 4); // Side right
-    g.fillRect(16, 0, 8, 3); // Top detail
-    // Cyan stripe on helmet
-    g.fillStyle(0x00e8ff);
-    g.fillRect(16, 1, 8, 1);
-
-    // Legs with separation
-    g.fillStyle(0x141430);
-    g.fillRect(12, 30, 7, 8);
-    g.fillRect(21, 30, 7, 8);
-
-    // Feet
-    g.fillStyle(0x1a1a3a);
-    g.fillRect(11, 36, 8, 4);
-    g.fillRect(21, 36, 8, 4);
-
-    // Arms with better positioning
-    // Left arm
-    g.fillStyle(0x1a1a3a);
-    g.fillRect(3, 14, 8, 12);
-    g.fillStyle(0x00e8ff); // Cyan hand glow
-    g.fillRect(3, 24, 8, 4);
-
-    // Right arm
-    g.fillStyle(0x1a1a3a);
-    g.fillRect(29, 14, 8, 12);
-    g.fillStyle(0x00e8ff); // Cyan hand glow
-    g.fillRect(29, 24, 8, 4);
-
-    // Cyan accent lines on body
-    g.fillStyle(0x00e8ff, 0.6);
-    g.fillRect(10, 15, 20, 1);
-    g.fillRect(10, 22, 20, 1);
-
-    // Outline/shading
-    g.lineStyle(1, 0x00e8ff, 0.3);
-    g.strokeRect(10, 3, 20, 31);
+    // Cute floating particles effect
+    g.fillStyle(0xffcc00, 0.6);
+    g.fillCircle(32, 8, 2);
+    g.fillStyle(0xff6b9d, 0.6);
+    g.fillCircle(6, 24, 1.5);
+    g.fillStyle(0x9966ff, 0.6);
+    g.fillCircle(35, 20, 1.5);
 
     g.generateTexture('player', s, s);
     g.destroy();
