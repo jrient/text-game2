@@ -55,6 +55,8 @@ export default class GameScene extends Phaser.Scene {
     // Systems
     this.skillSystem = new SkillSystem(this);
     this.waveSystem  = new WaveSystem(this, this.levelConfig, this.gameMode);
+    // Start the first wave
+    this.waveSystem.startNextWave();
 
     // Achievement system - start tracking session
     achievementManager.startSession(this.gameMode);

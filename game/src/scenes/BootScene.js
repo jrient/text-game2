@@ -117,93 +117,96 @@ export default class BootScene extends Phaser.Scene {
   }
 
   /**
-   * Create cute anime-style player character
+   * Create cool male player character (cyberpunk warrior style)
    */
   _makeEnhancedPlayer() {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
     const s = 40;
 
-    // Shadow/outline for depth
-    g.fillStyle(0x1a1a2a, 0.5);
+    // Shadow/glow effect
+    g.fillStyle(0x00e8ff, 0.2);
+    g.fillCircle(20, 20, 18);
+    g.fillStyle(0xff00aa, 0.15);
     g.fillCircle(20, 20, 14);
 
-    // Hair (fluffy pink gradient)
-    g.fillStyle(0xff6b9d);
-    g.fillCircle(20, 18, 14);
-    g.fillStyle(0xff8ab8);
-    g.fillCircle(20, 17, 12);
-    // Hair tufts
-    g.fillStyle(0xff6b9d);
-    g.fillCircle(14, 12, 5);
-    g.fillCircle(26, 12, 5);
-    g.fillCircle(20, 10, 4);
-    g.fillCircle(12, 16, 4);
-    g.fillCircle(28, 16, 4);
+    // Spiky anime hair (dark with cyan highlights)
+    // Base hair
+    g.fillStyle(0x1a1a2e);
+    g.fillCircle(20, 15, 14);
+    // Hair spikes
+    g.fillStyle(0x16213e);
+    g.fillTriangle(20, 5, 15, 12, 25, 12);
+    g.fillTriangle(12, 8, 10, 14, 16, 10);
+    g.fillTriangle(28, 8, 24, 10, 30, 14);
+    g.fillTriangle(8, 14, 6, 18, 12, 14);
+    g.fillTriangle(32, 14, 28, 14, 34, 18);
+    // Cyan highlights in hair
+    g.fillStyle(0x00e8ff, 0.8);
+    g.fillTriangle(18, 6, 16, 10, 20, 8);
+    g.fillTriangle(26, 10, 24, 12, 27, 14);
 
-    // Face (skin tone)
+    // Face (determined expression)
     g.fillStyle(0xffe4d6);
     g.fillCircle(20, 20, 10);
-    // Blush
-    g.fillStyle(0xffb4c4, 0.7);
-    g.fillCircle(14, 21, 2.5);
-    g.fillCircle(26, 21, 2.5);
+    // Sharp eyebrows
+    g.fillStyle(0x1a1a2e);
+    g.fillRect(12, 15, 5, 2);
+    g.fillRect(23, 15, 5, 2);
 
-    // Eyes (big anime eyes with sparkle)
-    // Left eye white
+    // Eyes (sharp and determined)
     g.fillStyle(0xffffff);
     g.fillCircle(15, 19, 4);
     g.fillCircle(25, 19, 4);
-    // Iris (purple with gradient)
-    g.fillStyle(0x9966ff);
-    g.fillCircle(15, 19, 3);
-    g.fillCircle(25, 19, 3);
-    g.fillStyle(0xbb88ff);
-    g.fillCircle(15, 19, 2);
-    g.fillCircle(25, 19, 2);
+    // Electric blue iris
+    g.fillStyle(0x00e8ff);
+    g.fillCircle(15, 19, 2.5);
+    g.fillCircle(25, 19, 2.5);
     // Pupils
-    g.fillStyle(0x222244);
+    g.fillStyle(0x000000);
     g.fillCircle(15, 19, 1.2);
     g.fillCircle(25, 19, 1.2);
-    // Eye highlights (sparkle)
-    g.fillStyle(0xffffff);
-    g.fillCircle(13, 17, 1.5);
-    g.fillCircle(23, 17, 1.5);
-    g.fillCircle(16, 20, 0.8);
-    g.fillCircle(26, 20, 0.8);
+    // Eye shine
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(14, 18, 1);
+    g.fillCircle(24, 18, 1);
 
-    // Cute mouth
-    g.fillStyle(0xff8899, 0.8);
-    g.fillCircle(20, 24, 2);
-    g.fillStyle(0xffffff, 0.6);
-    g.fillCircle(20, 24.5, 1);
+    // Confident smirk
+    g.lineStyle(2, 0xcc6666, 1);
+    g.moveTo(16, 25);
+    g.lineTo(24, 25);
 
-    // Hair accessory (bow)
-    g.fillStyle(0xffcc00);
-    g.fillRect(8, 14, 6, 3);
-    g.fillRect(9, 13, 4, 5);
-    g.fillCircle(9, 15.5, 2.5);
-    g.fillCircle(13, 15.5, 2.5);
-    g.fillStyle(0xff8844);
-    g.fillCircle(11, 15.5, 1.5);
+    // Cool jacket/armor
+    g.fillStyle(0x1a1a2e);
+    g.fillRect(12, 28, 16, 10);
+    // Jacket collar
+    g.fillStyle(0x16213e);
+    g.fillRect(14, 27, 12, 4);
+    // Magenta accent stripe
+    g.fillStyle(0xff00aa);
+    g.fillRect(12, 30, 16, 2);
 
-    // Body (cute outfit)
-    g.fillStyle(0x4488ff);
-    g.fillRect(14, 28, 12, 8);
-    g.fillStyle(0x66aaff);
-    g.fillRect(14, 28, 12, 3);
-
-    // Arms
+    // Arms (muscular)
     g.fillStyle(0xffe4d6);
-    g.fillCircle(10, 32, 4);
-    g.fillCircle(30, 32, 4);
+    g.fillRect(6, 28, 6, 8);
+    g.fillRect(28, 28, 6, 8);
+    // Glove accents
+    g.fillStyle(0x00e8ff);
+    g.fillRect(6, 34, 6, 2);
+    g.fillRect(28, 34, 6, 2);
 
-    // Cute floating particles effect
-    g.fillStyle(0xffcc00, 0.6);
-    g.fillCircle(32, 8, 2);
-    g.fillStyle(0xff6b9d, 0.6);
-    g.fillCircle(6, 24, 1.5);
-    g.fillStyle(0x9966ff, 0.6);
-    g.fillCircle(35, 20, 1.5);
+    // Energy aura effect
+    g.lineStyle(1, 0x00e8ff, 0.3);
+    g.strokeCircle(20, 20, 17);
+    g.lineStyle(1, 0xff00aa, 0.2);
+    g.strokeCircle(20, 20, 19);
+
+    // Floating energy particles
+    g.fillStyle(0x00e8ff, 0.8);
+    g.fillCircle(6, 10, 1.5);
+    g.fillCircle(34, 25, 1.5);
+    g.fillStyle(0xff00aa, 0.8);
+    g.fillCircle(36, 12, 1);
+    g.fillCircle(5, 28, 1);
 
     g.generateTexture('player', s, s);
     g.destroy();
