@@ -5,8 +5,11 @@ import ThrowingKnife from '../weapons/ThrowingKnife.js';
 import Fireball from '../weapons/Fireball.js';
 import Lightning from '../weapons/Lightning.js';
 import GarlicAura from '../weapons/GarlicAura.js';
+import FrostShard from '../weapons/FrostShard.js';
+import HomingMissile from '../weapons/HomingMissile.js';
+import PoisonCloud from '../weapons/PoisonCloud.js';
 
-const WEAPON_CLASSES = { MagicBolt, RotatingAxe, ThrowingKnife, Fireball, Lightning, GarlicAura };
+const WEAPON_CLASSES = { MagicBolt, RotatingAxe, ThrowingKnife, Fireball, Lightning, GarlicAura, FrostShard, HomingMissile, PoisonCloud };
 
 export default class SkillSystem {
   constructor(scene) {

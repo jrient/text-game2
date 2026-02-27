@@ -31,18 +31,34 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   _buildBg() {
-    // Gradient background
+    // Gradient background (simulated with color bands)
     const bg = this.add.graphics();
-    // Top to bottom gradient
-    const gradient = bg.createLinearGradient(0, 0, 0, C.H);
-    gradient.addColorStop(0, 0x1a1a2e);
-    gradient.addColorStop(0.5, 0x16213e);
-    gradient.addColorStop(1, 0x0f0f23);
-    bg.fillStyle(gradient); bg.fillRect(0, 0, C.W, C.H);
+    const steps = 20;
+    const bandH = Math.ceil(C.H / steps);
+    const colors = [0x04040e, 0x080828, 0x04040e];
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1);
+      let c;
+      if (t < 0.5) {
+        c = Phaser.Display.Color.Interpolate.ColorWithColor(
+          Phaser.Display.Color.IntegerToColor(colors[0]),
+          Phaser.Display.Color.IntegerToColor(colors[1]),
+          100, Math.round(t * 2 * 100)
+        );
+      } else {
+        c = Phaser.Display.Color.Interpolate.ColorWithColor(
+          Phaser.Display.Color.IntegerToColor(colors[1]),
+          Phaser.Display.Color.IntegerToColor(colors[2]),
+          100, Math.round((t - 0.5) * 2 * 100)
+        );
+      }
+      bg.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b));
+      bg.fillRect(0, i * bandH, C.W, bandH + 1);
+    }
 
     // Animated stars with different colors
     this._stars = [];
-    const starColors = [0xffffff, 0x44aaff, 0xffaa44, 0xff44aa];
+    const starColors = [0xffffff, 0x00e8ff, 0xff00aa, 0xcc44ff];
     for (let i = 0; i < 60; i++) {
       const x = Phaser.Math.Between(0, C.W);
       const y = Phaser.Math.Between(0, C.H);
@@ -72,7 +88,7 @@ export default class MenuScene extends Phaser.Scene {
         Phaser.Math.Between(0, C.W),
         Phaser.Math.Between(0, C.H),
         Phaser.Math.Between(2, 4),
-        0x4488ff,
+        0x00e8ff,
         0.3
       ).setDepth(0);
       this._particles.push(particle);
@@ -91,8 +107,14 @@ export default class MenuScene extends Phaser.Scene {
 
     // Bottom decorative line
     const line = this.add.graphics();
-    line.lineStyle(2, 0x3355aa, 0.5);
+    line.lineStyle(2, 0x00e8ff, 0.3);
     line.lineBetween(20, C.H - 60, C.W - 20, C.H - 60);
+
+    // Subtle cyberpunk grid pattern
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0x00e8ff, 0.03);
+    for (let gx = 0; gx < C.W; gx += 60) grid.lineBetween(gx, 0, gx, C.H);
+    for (let gy = 0; gy < C.H; gy += 60) grid.lineBetween(0, gy, C.W, gy);
   }
 
   _buildTitle() {
@@ -103,46 +125,46 @@ export default class MenuScene extends Phaser.Scene {
     for (let i = 3; i > 0; i--) {
       this.add.text(centerX + i, 93 - i, 'PIXEL', {
         fontFamily: "'Press Start 2P'", fontSize: '28px',
-        color: i === 1 ? '#004422' : '#002211',
+        color: i === 1 ? '#001a22' : '#000d11',
       }).setOrigin(0.5).setAlpha(0.5);
     }
     for (let i = 3; i > 0; i--) {
       this.add.text(centerX + i, 127 - i, 'SURVIVOR', {
         fontFamily: "'Press Start 2P'", fontSize: '24px',
-        color: i === 1 ? '#002244' : '#001122',
+        color: i === 1 ? '#220011' : '#110008',
       }).setOrigin(0.5).setAlpha(0.5);
     }
 
     // Main title with gradient effect (simulated with multiple layers)
     this._titleText1 = this.add.text(centerX, 90, 'PIXEL', {
       fontFamily: "'Press Start 2P'", fontSize: '28px',
-      color: '#44ff88',
-      stroke: '#003322', strokeThickness: 4,
-      shadow: { blur: 8, color: '#44ff88', fill: true },
+      color: '#00e8ff',
+      stroke: '#002233', strokeThickness: 4,
+      shadow: { blur: 8, color: '#00e8ff', fill: true },
     }).setOrigin(0.5);
 
     this._titleText2 = this.add.text(centerX, 127, 'SURVIVOR', {
       fontFamily: "'Press Start 2P'", fontSize: '24px',
-      color: '#4488ff',
-      stroke: '#002244', strokeThickness: 4,
-      shadow: { blur: 8, color: '#4488ff', fill: true },
+      color: '#ff00aa',
+      stroke: '#220011', strokeThickness: 4,
+      shadow: { blur: 8, color: '#ff00aa', fill: true },
     }).setOrigin(0.5);
 
     // Subtitle with styling
     this.add.text(centerX, 165, '像素幸存者', {
-      fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#88aacc',
+      fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#8899bb',
       stroke: '#001122', strokeThickness: 2,
     }).setOrigin(0.5);
 
     // Version badge
     this.add.text(centerX, 195, 'v1.3', {
-      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#556677',
+      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#334466',
     }).setOrigin(0.5);
 
     // PC control hint (only show in landscape)
     if (!C.IS_PORTRAIT) {
       this.add.text(centerX, C.H - 30, '推荐使用手柄或WASD控制 | 游戏内ESC暂停', {
-        fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#667788',
+        fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#445566',
       }).setOrigin(0.5);
     }
   }
@@ -164,17 +186,17 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     // Campaign button with improved style
-    this._btnCampaign = this._makeStyledButton(W / 2, btnY, '⚔', '关卡模式', 0x2a4a8a, 0x3a5a9a, () => {
+    this._btnCampaign = this._makeStyledButton(W / 2, btnY, '⚔', '关卡模式', 0x0a1a3a, 0x0e2244, () => {
       this._showLevelSelect();
     });
 
     // Endless button with improved style
-    this._btnEndless = this._makeStyledButton(W / 2, btnY + btnSpacing, '∞', '无尽模式', 0x8a4a2a, 0x9a5a3a, () => {
+    this._btnEndless = this._makeStyledButton(W / 2, btnY + btnSpacing, '∞', '无尽模式', 0x2a0a2a, 0x3a0e3a, () => {
       this.scene.start('Game', { mode: 'endless', levelIndex: 0 });
     });
 
     // Leaderboard button
-    this._btnLeaderboard = this._makeStyledButton(W / 2, btnY + btnSpacing * 2, '🏆', '排行榜', 0x6a5a2a, 0x8a7a4a, () => {
+    this._btnLeaderboard = this._makeStyledButton(W / 2, btnY + btnSpacing * 2, '🏆', '排行榜', 0x1a1a0a, 0x2a2a0e, () => {
       this._showLeaderboard();
     });
 
@@ -182,7 +204,7 @@ export default class MenuScene extends Phaser.Scene {
     const highScores = SaveSystem.getHighScores();
     const endlessHigh = SaveSystem.formatNumber(highScores.endless);
     this.add.text(W / 2, scoreY, `无尽模式最高: ${endlessHigh}`, {
-      fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '8px' : '10px', color: '#667788',
+      fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '8px' : '10px', color: '#556688',
     }).setOrigin(0.5);
 
     // Settings button (top right)
@@ -201,10 +223,10 @@ export default class MenuScene extends Phaser.Scene {
       bg.fillStyle(isHovered ? hoverColor : baseColor);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
       // Highlight effect
-      bg.lineStyle(2, isHovered ? 0xffffff : hoverColor, 0.8);
+      bg.lineStyle(2, isHovered ? 0x00e8ff : hoverColor, 0.8);
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
       // Shine effect at top
-      bg.fillStyle(0xffffff, 0.15);
+      bg.fillStyle(0x00e8ff, 0.08);
       bg.fillRoundedRect(-w / 2 + 4, -h / 2 + 4, w - 8, 12, 4);
     };
     drawBg(false);
@@ -218,8 +240,8 @@ export default class MenuScene extends Phaser.Scene {
 
     // Label text
     const labelText = this.add.text(15, 0, label, {
-      fontFamily: "'Press Start 2P'", fontSize: '14px', color: '#ffffff',
-      stroke: '#000000', strokeThickness: 3,
+      fontFamily: "'Press Start 2P'", fontSize: '14px', color: '#dce4ff',
+      stroke: '#000011', strokeThickness: 3,
     }).setOrigin(0, 0.5);
     container.add(labelText);
 
@@ -246,9 +268,9 @@ export default class MenuScene extends Phaser.Scene {
   _buildSettingsButton() {
     // Settings button with better styling
     const settingsBg = this.add.graphics();
-    settingsBg.fillStyle(0x223344, 0.8);
+    settingsBg.fillStyle(0x0a1a2a, 0.8);
     settingsBg.fillRoundedRect(C.W - 48, 12, 36, 36, 6);
-    settingsBg.lineStyle(2, 0x3355aa, 0.6);
+    settingsBg.lineStyle(2, 0x00e8ff, 0.4);
     settingsBg.strokeRoundedRect(C.W - 48, 12, 36, 36, 6);
     settingsBg.setDepth(99);
 
@@ -259,32 +281,32 @@ export default class MenuScene extends Phaser.Scene {
     settingsIcon.on('pointerdown', () => {
       this._showSettingsPanel();
       settingsBg.clear();
-      settingsBg.fillStyle(0x334455, 0.8);
+      settingsBg.fillStyle(0x0d2235, 0.8);
       settingsBg.fillRoundedRect(C.W - 48, 12, 36, 36, 6);
     });
 
     settingsIcon.on('pointerover', () => {
       settingsIcon.setScale(1.15);
       settingsBg.clear();
-      settingsBg.fillStyle(0x445566, 0.9);
+      settingsBg.fillStyle(0x0f2840, 0.9);
       settingsBg.fillRoundedRect(C.W - 48, 12, 36, 36, 6);
-      settingsBg.lineStyle(2, 0x556677, 0.8);
+      settingsBg.lineStyle(2, 0x00e8ff, 0.7);
       settingsBg.strokeRoundedRect(C.W - 48, 12, 36, 36, 6);
     });
     settingsIcon.on('pointerout', () => {
       settingsIcon.setScale(1);
       settingsBg.clear();
-      settingsBg.fillStyle(0x223344, 0.8);
+      settingsBg.fillStyle(0x0a1a2a, 0.8);
       settingsBg.fillRoundedRect(C.W - 48, 12, 36, 36, 6);
-      settingsBg.lineStyle(2, 0x3355aa, 0.6);
+      settingsBg.lineStyle(2, 0x00e8ff, 0.4);
       settingsBg.strokeRoundedRect(C.W - 48, 12, 36, 36, 6);
     });
 
     // Achievement button (trophy icon) - to the left of settings
     const achievementBg = this.add.graphics();
-    achievementBg.fillStyle(0x443322, 0.8);
+    achievementBg.fillStyle(0x1a0a2a, 0.8);
     achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
-    achievementBg.lineStyle(2, 0x664422, 0.6);
+    achievementBg.lineStyle(2, 0xff00aa, 0.4);
     achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
     achievementBg.setDepth(99);
 
@@ -303,17 +325,17 @@ export default class MenuScene extends Phaser.Scene {
     achievementIcon.on('pointerover', () => {
       achievementIcon.setScale(1.15);
       achievementBg.clear();
-      achievementBg.fillStyle(0x664433, 0.9);
+      achievementBg.fillStyle(0x280f3a, 0.9);
       achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
-      achievementBg.lineStyle(2, 0x886644, 0.8);
+      achievementBg.lineStyle(2, 0xff00aa, 0.7);
       achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
     });
     achievementIcon.on('pointerout', () => {
       achievementIcon.setScale(1);
       achievementBg.clear();
-      achievementBg.fillStyle(0x443322, 0.8);
+      achievementBg.fillStyle(0x1a0a2a, 0.8);
       achievementBg.fillRoundedRect(C.W - 90, 12, 36, 36, 6);
-      achievementBg.lineStyle(2, 0x664422, 0.6);
+      achievementBg.lineStyle(2, 0xff00aa, 0.4);
       achievementBg.strokeRoundedRect(C.W - 90, 12, 36, 36, 6);
     });
   }
@@ -324,38 +346,38 @@ export default class MenuScene extends Phaser.Scene {
 
     // Overlay bg with gradient effect
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x04040e, 0.96); bg.fillRect(0, 0, W, H);
     // Add subtle border
-    bg.lineStyle(4, 0x3355aa); bg.strokeRect(10, 10, W - 20, H - 20);
+    bg.lineStyle(4, 0x00e8ff); bg.strokeRect(10, 10, W - 20, H - 20);
     this._settingsPanel.add(bg);
 
     // Title with glow effect
     const titleBg = this.add.text(W / 2 + 2, 82, '⚙ 设置', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#002244',
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#002233',
     }).setOrigin(0.5);
     const title = this.add.text(W / 2, 80, '⚙ 设置', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#44ff88',
-      stroke: '#002244', strokeThickness: 4,
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#00e8ff',
+      stroke: '#002233', strokeThickness: 4,
     }).setOrigin(0.5);
     this._settingsPanel.add([titleBg, title]);
 
     // Sound toggle
     const soundOn = SettingsManager.get('soundEnabled');
     this._soundToggleText = this.add.text(W / 2, 150, `🔊 音效`, {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: soundOn ? '#44ff88' : '#666666',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: soundOn ? '#00ff88' : '#334455',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     this._soundToggleText.on('pointerdown', () => {
       const newState = SettingsManager.toggle('soundEnabled');
       this._soundToggleText.setText(`${newState ? '🔊' : '🔇'} 音效`);
-      this._soundToggleText.setColor(newState ? '#44ff88' : '#666666');
+      this._soundToggleText.setColor(newState ? '#00ff88' : '#334455');
     });
     this._settingsPanel.add(this._soundToggleText);
 
     // Difficulty selector
     const difficulty = SettingsManager.get('difficulty') || 'normal';
     const diffLabels = { easy: '简单', normal: '普通', hard: '困难' };
-    const diffColors = { easy: '#44ff44', normal: '#ffaa00', hard: '#ff4444' };
+    const diffColors = { easy: '#00ff88', normal: '#ffcc00', hard: '#ff2266' };
     this._difficultyText = this.add.text(W / 2, 210, `⚔ 难度: ${diffLabels[difficulty]}`, {
       fontFamily: "'Press Start 2P'", fontSize: '12px', color: diffColors[difficulty],
       stroke: '#000000', strokeThickness: 3,
@@ -374,7 +396,7 @@ export default class MenuScene extends Phaser.Scene {
     // Joystick side toggle
     const joystickSide = SettingsManager.get('joystickSide') || 'left';
     this._joystickToggleText = this.add.text(W / 2, 270, `🕹 摇杆: ${joystickSide === 'left' ? '左侧' : '右侧'}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#4488ff',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#00e8ff',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     this._joystickToggleText.on('pointerdown', () => {
@@ -388,18 +410,18 @@ export default class MenuScene extends Phaser.Scene {
     // Stats display (readonly)
     const stats = SaveSystem.getStats();
     this.add.text(W / 2, 350, `📊 游戏统计`, {
-      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#aa88ff',
+      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#cc44ff',
     }).setOrigin(0.5);
     this.add.text(W / 2, 380, `总击杀: ${SaveSystem.formatNumber(stats.totalKills)}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#888888',
+      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#556688',
     }).setOrigin(0.5);
     this.add.text(W / 2, 400, `游戏时长: ${SaveSystem.formatTime(stats.totalPlayTime)}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#888888',
+      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#556688',
     }).setOrigin(0.5);
 
     // Back button
     const back = this.add.text(W / 2, H - 50, '◀ 返回', {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#8899bb',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => this._hideSettingsPanel());
@@ -426,26 +448,26 @@ export default class MenuScene extends Phaser.Scene {
 
     // Overlay bg
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
-    bg.lineStyle(4, 0x665544); bg.strokeRect(10, 10, W - 20, H - 20);
+    bg.fillStyle(0x04040e, 0.96); bg.fillRect(0, 0, W, H);
+    bg.lineStyle(4, 0xff00aa); bg.strokeRect(10, 10, W - 20, H - 20);
     this._achievementPanel.add(bg);
 
     // Title
     const titleBg = this.add.text(W / 2 + 2, 82, '🏆 成就', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#332200',
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#220011',
     }).setOrigin(0.5);
     const title = this.add.text(W / 2, 80, '🏆 成就', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ffaa44',
-      stroke: '#332200', strokeThickness: 4,
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ff00aa',
+      stroke: '#220011', strokeThickness: 4,
     }).setOrigin(0.5);
     this._achievementPanel.add([titleBg, title]);
 
     // Progress summary
     const unlockedCount = achievementManager.unlocked.size;
-    const totalCount = Object.keys(ACHIEVEMENTS).length;
+    const totalCount = Object.keys(window.ACHIEVEMENTS || {}).length || 1;
     const progressPercent = Math.floor((unlockedCount / totalCount) * 100);
     this.add.text(W / 2, 120, `进度: ${unlockedCount}/${totalCount} (${progressPercent}%)`, {
-      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#ffcc66',
+      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#ffcc00',
     }).setOrigin(0.5);
 
     // Get achievements grouped by category
@@ -462,14 +484,14 @@ export default class MenuScene extends Phaser.Scene {
 
       // Category header
       const catHeader = this.add.text(W / 2, currentY, `${catInfo.icon} ${catInfo.name}`, {
-        fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#88aacc',
+        fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#8899bb',
       }).setOrigin(0.5);
       this._achievementPanel.add(catHeader);
       currentY += 25;
 
       // Achievement entries
       catAchievements.forEach(ach => {
-        const achColor = ach.unlocked ? '#44ff88' : '#556677';
+        const achColor = ach.unlocked ? '#00ff88' : '#334455';
         const achIcon = ach.unlocked ? ach.icon : '🔒';
         const achText = this.add.text(W / 2, currentY, `${achIcon} ${ach.name}`, {
           fontFamily: "'Press Start 2P'", fontSize: '8px', color: achColor,
@@ -487,7 +509,7 @@ export default class MenuScene extends Phaser.Scene {
           const progress = achievementManager.getProgress(ach.id);
           if (progress) {
             const progText = this.add.text(W / 2, currentY + 22, `${progress.current}/${progress.max}`, {
-              fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#667788',
+              fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#556688',
             }).setOrigin(0.5);
             this._achievementPanel.add(progText);
             currentY += 10;
@@ -507,7 +529,7 @@ export default class MenuScene extends Phaser.Scene {
 
     // Back button
     const back = this.add.text(W / 2, H - 50, '◀ 返回', {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#8899bb',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => this._hideAchievementPanel());
@@ -538,21 +560,21 @@ export default class MenuScene extends Phaser.Scene {
 
     // Overlay bg
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
-    bg.lineStyle(4, 0x556644); bg.strokeRect(10, 10, W - 20, H - 20);
+    bg.fillStyle(0x04040e, 0.96); bg.fillRect(0, 0, W, H);
+    bg.lineStyle(4, 0xffcc00); bg.strokeRect(10, 10, W - 20, H - 20);
     this._leaderboardPanel.add(bg);
 
     // Title
     const title = this.add.text(W / 2, 60, '🏆 排行榜', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ffcc44',
-      stroke: '#332200', strokeThickness: 4,
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#ffcc00',
+      stroke: '#221a00', strokeThickness: 4,
     }).setOrigin(0.5);
     this._leaderboardPanel.add(title);
 
     // Mode selector
     this._leaderboardMode = 'endless';
     const modeBtn = this.add.text(W / 2, 100, `模式: 无尽 ▼`, {
-      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#88aacc',
+      fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#8899bb',
       stroke: '#000000', strokeThickness: 2,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     modeBtn.on('pointerdown', () => {
@@ -564,7 +586,7 @@ export default class MenuScene extends Phaser.Scene {
 
     // Loading text
     this._leaderboardLoading = this.add.text(W / 2, H / 2, '加载中...', {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#667788',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#556688',
     }).setOrigin(0.5);
     this._leaderboardPanel.add(this._leaderboardLoading);
 
@@ -574,7 +596,7 @@ export default class MenuScene extends Phaser.Scene {
 
     // Back button
     const back = this.add.text(W / 2, H - 50, '◀ 返回', {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#8899bb',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => this._hideLeaderboardPanel());
@@ -594,7 +616,7 @@ export default class MenuScene extends Phaser.Scene {
 
       if (leaderboard.length === 0) {
         this._leaderboardEntries.add(this.add.text(C.W / 2, 50, '暂无数据', {
-          fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#556677',
+          fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#556688',
         }).setOrigin(0.5));
         return;
       }
@@ -608,9 +630,9 @@ export default class MenuScene extends Phaser.Scene {
         const isPlayer = entry.player_id === window.CloudService?.getPlayerId?.();
 
         // Rank badge
-        const rankColor = i === 0 ? '#ffdd00' : i === 1 ? '#cccccc' : i === 2 ? '#cd7f32' : '#556677';
+        const rankColor = i === 0 ? '#ffcc00' : i === 1 ? '#ccccdd' : i === 2 ? '#cc7744' : '#556688';
         const rankBg = this.add.graphics();
-        rankBg.fillStyle(0x223344, 0.8);
+        rankBg.fillStyle(0x0a1a2a, 0.8);
         rankBg.fillRoundedRect(30, y - 12, 40, 24, 4);
         this._leaderboardEntries.add(rankBg);
 
@@ -620,7 +642,7 @@ export default class MenuScene extends Phaser.Scene {
         this._leaderboardEntries.add(rankText);
 
         // Player name
-        const nameColor = isPlayer ? '#44ff88' : '#ffffff';
+        const nameColor = isPlayer ? '#00ff88' : '#dce4ff';
         const nameText = this.add.text(90, y - 5, entry.player_name.substring(0, 12), {
           fontFamily: "'Press Start 2P'", fontSize: '9px', color: nameColor,
         }).setOrigin(0, 0.5);
@@ -628,13 +650,13 @@ export default class MenuScene extends Phaser.Scene {
 
         // Score
         const scoreText = this.add.text(C.W - 40, y - 5, SaveSystem.formatNumber(entry.score), {
-          fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffaa44',
+          fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffcc00',
         }).setOrigin(1, 0.5);
         this._leaderboardEntries.add(scoreText);
 
         // Stats (small)
         const statsText = this.add.text(90, y + 8, `Lv${entry.level} ${entry.kills}击杀 ${entry.time}秒`, {
-          fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#556677',
+          fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#445566',
         }).setOrigin(0, 0.5);
         this._leaderboardEntries.add(statsText);
       });
@@ -668,17 +690,17 @@ export default class MenuScene extends Phaser.Scene {
 
     // Overlay bg with improved style
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0a15, 0.95); bg.fillRect(0, 0, W, H);
-    bg.lineStyle(4, 0x3355aa); bg.strokeRect(10, 10, W - 20, H - 20);
+    bg.fillStyle(0x04040e, 0.96); bg.fillRect(0, 0, W, H);
+    bg.lineStyle(4, 0x00e8ff); bg.strokeRect(10, 10, W - 20, H - 20);
     this._levelPanel.add(bg);
 
     // Title with glow
     const titleBg = this.add.text(W / 2 + 2, 62, '选择关卡', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#002244',
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#002233',
     }).setOrigin(0.5);
     const title = this.add.text(W / 2, 60, '选择关卡', {
-      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#44ff88',
-      stroke: '#002244', strokeThickness: 4,
+      fontFamily: "'Press Start 2P'", fontSize: '18px', color: '#00e8ff',
+      stroke: '#002233', strokeThickness: 4,
     }).setOrigin(0.5);
     this._levelPanel.add([titleBg, title]);
 
@@ -692,7 +714,7 @@ export default class MenuScene extends Phaser.Scene {
 
     // Back button with improved style
     const back = this.add.text(W / 2, H - 50, '◀ 返回', {
-      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#aabbcc',
+      fontFamily: "'Press Start 2P'", fontSize: '12px', color: '#8899bb',
       stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => this._hideLevelSelect());
@@ -709,13 +731,13 @@ export default class MenuScene extends Phaser.Scene {
     const bg = this.add.graphics();
     const drawBg = (isHovered) => {
       bg.clear();
-      bg.fillStyle(isHovered ? 0x1a2255 : 0x111133, 0.95);
+      bg.fillStyle(isHovered ? 0x0e1238 : 0x0a0a24, 0.95);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
-      bg.lineStyle(2, isHovered ? 0x4466cc : 0x3355aa);
+      bg.lineStyle(2, isHovered ? 0x00e8ff : 0x1a2a5a);
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
       // Shine effect
       if (isHovered) {
-        bg.fillStyle(0xffffff, 0.1);
+        bg.fillStyle(0x00e8ff, 0.06);
         bg.fillRoundedRect(-w / 2 + 4, -h / 2 + 4, w - 8, 12, 4);
       }
     };
@@ -724,8 +746,8 @@ export default class MenuScene extends Phaser.Scene {
 
     // Level number badge
     const badgeBg = this.add.graphics();
-    badgeBg.fillStyle(0x3355aa); badgeBg.fillCircle(-w / 2 + 24, 0, 20);
-    badgeBg.lineStyle(2, 0x4466cc); badgeBg.strokeCircle(-w / 2 + 24, 0, 20);
+    badgeBg.fillStyle(0x00e8ff, 0.2); badgeBg.fillCircle(-w / 2 + 24, 0, 20);
+    badgeBg.lineStyle(2, 0x00e8ff); badgeBg.strokeCircle(-w / 2 + 24, 0, 20);
     container.add(badgeBg);
 
     const numTxt = this.add.text(-w / 2 + 24, 1, `0${lvl.id}`, {
@@ -748,23 +770,23 @@ export default class MenuScene extends Phaser.Scene {
 
     // Duration badge
     const durBg = this.add.graphics();
-    durBg.fillStyle(0x332200); durBg.fillRoundedRect(w / 2 - 75, -h / 2 + 8, 65, 18, 4);
+    durBg.fillStyle(0x1a0a2a); durBg.fillRoundedRect(w / 2 - 75, -h / 2 + 8, 65, 18, 4);
     container.add(durBg);
 
     const durTxt = this.add.text(w / 2 - 43, -h / 2 + 9, `${lvl.duration}s`, {
-      fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ffaa44',
+      fontFamily: "'Press Start 2P'", fontSize: '9px', color: '#ff00aa',
     }).setOrigin(0.5);
     container.add(durTxt);
 
     // High score display
     const scoreTxt = this.add.text(w / 2 - 10, h / 2 - 12, `★ ${levelHigh}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#ffdd44',
+      fontFamily: "'Press Start 2P'", fontSize: '8px', color: '#ffcc00',
     }).setOrigin(1, 1);
     container.add(scoreTxt);
 
     // Play button
     const playBtn = this.add.text(w / 2 - 15, h / 2 - 14, '▶', {
-      fontFamily: "'Press Start 2P'", fontSize: '16px', color: '#44ff88',
+      fontFamily: "'Press Start 2P'", fontSize: '16px', color: '#00ff88',
     }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
     playBtn.on('pointerdown', () => {
       this.cameras.main.flash(200, 255, 255, 255, false);
@@ -800,17 +822,17 @@ export default class MenuScene extends Phaser.Scene {
 
     // Version badge
     const versionBg = this.add.graphics();
-    versionBg.fillStyle(0x223344, 0.6);
+    versionBg.fillStyle(0x0a1a2a, 0.6);
     versionBg.fillRoundedRect(C.W / 2 - 55, footerY - 10, 110, 20, 4);
     versionBg.setDepth(0);
 
     this.add.text(C.W / 2, footerY, 'v1.1  ·  触屏/键盘', {
-      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#445566',
+      fontFamily: "'Press Start 2P'", fontSize: '7px', color: '#334466',
     }).setOrigin(0.5);
 
     // Control hints
     this.add.text(C.W / 2, footerY + 18, 'WASD移动 · ESC暂停', {
-      fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#334455',
+      fontFamily: "'Press Start 2P'", fontSize: '6px', color: '#223344',
     }).setOrigin(0.5);
   }
 

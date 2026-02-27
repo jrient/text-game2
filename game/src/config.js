@@ -12,21 +12,22 @@ export const C = {
 
   TILE: 48, // tile size in pixels
 
-  // UI palette
+  // UI palette — cyberpunk / sci-fi neon
   COL: {
-    BG:       0x0a0a0f,
-    PANEL:    0x111122,
-    BORDER:   0x3355aa,
-    TEXT:     0xeeeeff,
-    GREEN:    0x44ff88,
-    RED:      0xff4444,
-    YELLOW:   0xffdd44,
-    BLUE:     0x4488ff,
-    PURPLE:   0xaa44ff,
-    ORANGE:   0xff8833,
-    CYAN:     0x44ffee,
+    BG:       0x04040e,
+    PANEL:    0x0a0a24,
+    BORDER:   0x00e8ff,
+    TEXT:     0xdce4ff,
+    GREEN:    0x00ff88,
+    RED:      0xff2266,
+    YELLOW:   0xffcc00,
+    BLUE:     0x3388ff,
+    PURPLE:   0xcc44ff,
+    ORANGE:   0xff6622,
+    CYAN:     0x00e8ff,
+    MAGENTA:  0xff00aa,
     WHITE:    0xffffff,
-    DARK:     0x080810,
+    DARK:     0x020208,
   },
 
   // Responsive HUD positions

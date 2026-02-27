@@ -10,7 +10,7 @@ export default class ExpOrb extends Phaser.Physics.Arcade.Sprite {
     this.body.setMaxVelocity(400, 400);
 
     // Gentle float animation
-    scene.tweens.add({
+    this._floatTween = scene.tweens.add({
       targets: this, y: y - 4, duration: 600 + Math.random() * 400,
       yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
@@ -33,4 +33,9 @@ export default class ExpOrb extends Phaser.Physics.Arcade.Sprite {
   }
 
   isAttracted() { return this._attracted; }
+
+  destroy() {
+    if (this._floatTween) { this._floatTween.stop(); this._floatTween = null; }
+    super.destroy();
+  }
 }

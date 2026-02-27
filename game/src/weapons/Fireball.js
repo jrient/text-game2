@@ -43,8 +43,7 @@ export default class Fireball extends BaseWeapon {
     const angle = Phaser.Math.Angle.Between(player.x, player.y, target.x, target.y);
     this.scene.physics.velocityFromAngle(Phaser.Math.RadToDeg(angle), stats.speed, b.body.velocity);
 
-    // Wobble animation
-    this.scene.tweens.add({ targets: b, scaleX: 1.2, scaleY: 0.8, duration: 150, yoyo: true, repeat: -1 });
+    b.setScale(1.1, 0.9);
     this.scene.playSound('fireball');
   }
 

@@ -9,8 +9,7 @@ export default class PoisonCloud extends BaseWeapon {
 
   update(time, delta) {
     const stats = this.getStats();
-    const cooldown = Math.round(stats.cooldown * (1 - this.player.cooldownReduction));
-    if (time - this._lastFire > cooldown) {
+    if (time - this._lastFire > stats.cooldown) {
       this._fire(stats);
       this._lastFire = time;
     }

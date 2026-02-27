@@ -34,46 +34,46 @@ export default class BootScene extends Phaser.Scene {
 
   _generateTextures() {
     // ── Enhanced Pixel tile textures ────────────────────────────
-    this._makeDetailedTile('tile_grass', [0x3a6b2a, 0x2d5a20, 0x4a7c38, 0x254018], 0x4a8c3a);
-    this._makeDetailedTile('tile_sand',  [0x8a7050, 0x7a6040, 0x9a8060, 0x6a5030], 0xb8a080);
-    this._makeDetailedTile('tile_stone', [0x404058, 0x383850, 0x505070, 0x28283a], 0x585878);
-    this._makeDetailedTile('tile_lava',  [0x5a2000, 0x4a1800, 0x6a2800, 0x3a1000], 0x8a4000);
-    this._makeDetailedTile('tile_void',  [0x200030, 0x1a0028, 0x280038, 0x140022], 0x400050);
+    this._makeDetailedTile('tile_grass', [0x0a2a2a, 0x082020, 0x0c3535, 0x061818], 0x00aa88);
+    this._makeDetailedTile('tile_sand',  [0x3a2218, 0x2a1810, 0x4a2a1a, 0x1a0e08], 0x884422);
+    this._makeDetailedTile('tile_stone', [0x1a1a2a, 0x141428, 0x222238, 0x0e0e1e], 0x3344aa);
+    this._makeDetailedTile('tile_lava',  [0x3a0028, 0x2a001a, 0x4a0035, 0x1a0010], 0xff00aa);
+    this._makeDetailedTile('tile_void',  [0x0a0018, 0x080014, 0x0e001e, 0x06000e], 0x6622cc);
 
     // ── Player (improved design) ────────────────────────────────
     this._makeEnhancedPlayer();
 
     // ── Enhanced projectiles ────────────────────────────────────
-    this._makeMagicBullet('bullet_magic', 0x88ddff);
-    this._makeKnife('bullet_knife', 0xccccaa);
-    this._makeFireball('bullet_fire', 0xff6600);
-    this._makeLightning('bullet_lightning', 0xffff44);
-    this._makeAxe('bullet_axe', 0xffaa22);
+    this._makeMagicBullet('bullet_magic', 0x00e8ff);
+    this._makeKnife('bullet_knife', 0xccddff);
+    this._makeFireball('bullet_fire', 0xff4400);
+    this._makeLightning('bullet_lightning', 0xeeff00);
+    this._makeAxe('bullet_axe', 0xff6600);
 
     // ── New projectiles for new weapons ─────────────────────────
-    this._makeMissile('bullet_missile', 0xff4444);
-    this._makePoisonCloud('bullet_poison', 0x44ff44);
-    this._makeFrostShard('bullet_frost', 0xaaddff);
+    this._makeMissile('bullet_missile', 0xff2266);
+    this._makePoisonCloud('bullet_poison', 0x00ff66);
+    this._makeFrostShard('bullet_frost', 0x88ccff);
 
     // ── Experience orbs (more detailed) ─────────────────────────
-    this._makeDetailedOrb('orb_exp_sm', 0x44ff88, 6);
-    this._makeDetailedOrb('orb_exp_md', 0x44ffaa, 9);
-    this._makeDetailedOrb('orb_exp_lg', 0x88ffcc, 13);
+    this._makeDetailedOrb('orb_exp_sm', 0xcc44ff, 6);
+    this._makeDetailedOrb('orb_exp_md', 0x00e8ff, 9);
+    this._makeDetailedOrb('orb_exp_lg', 0xff00aa, 13);
 
     // ── Enhanced particles ──────────────────────────────────────
     this._makeDetailedParticle('px_hit',   0xffffff, 5);
-    this._makeDetailedParticle('px_exp',   0x44ff88, 5);
-    this._makeDetailedParticle('px_fire',  0xff8800, 6);
-    this._makeDetailedParticle('px_spark', 0xffff44, 4);
-    this._makeDetailedParticle('px_ice',   0xaaddff, 5);
-    this._makeDetailedParticle('px_poison', 0x44ff44, 5);
-    this._makeDetailedParticle('px_blood', 0xff4444, 4);
+    this._makeDetailedParticle('px_exp',   0xcc44ff, 5);
+    this._makeDetailedParticle('px_fire',  0xff4400, 6);
+    this._makeDetailedParticle('px_spark', 0xeeff00, 4);
+    this._makeDetailedParticle('px_ice',   0x88ccff, 5);
+    this._makeDetailedParticle('px_poison', 0x00ff66, 5);
+    this._makeDetailedParticle('px_blood', 0xff2266, 4);
 
     // ── UI elements ──────────────────────────────────────────────
     this._makePixel('px_white', 0xffffff, 2);
-    this._makePixel('px_red',   0xff4444, 2);
-    this._makePixel('px_green', 0x44ff88, 2);
-    this._makePixel('px_blue',  0x4488ff, 2);
+    this._makePixel('px_red',   0xff2266, 2);
+    this._makePixel('px_green', 0x00ff88, 2);
+    this._makePixel('px_blue',  0x00e8ff, 2);
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -124,72 +124,74 @@ export default class BootScene extends Phaser.Scene {
     const s = 40;
 
     // Shadow/outline for depth
-    g.fillStyle(0x112255);
+    g.fillStyle(0x0a0a1a);
     g.fillRect(11, 11, 18, 22);
     g.fillRect(10, 3, 20, 14);
 
-    // Body (main color with gradient effect)
+    // Body (dark armor)
     // Top part
-    g.fillStyle(0x5599ff);
+    g.fillStyle(0x1a1a3a);
     g.fillRect(10, 10, 20, 12);
-    // Bottom part (slightly darker)
-    g.fillStyle(0x4488ee);
+    // Bottom part (slightly lighter)
+    g.fillStyle(0x222244);
     g.fillRect(10, 20, 20, 11);
 
     // Head with better proportions
-    g.fillStyle(0x5599ff);
+    g.fillStyle(0x1a1a3a);
     g.fillRect(11, 4, 18, 12);
 
-    // Face (skin tone)
-    g.fillStyle(0xffddaa);
-    g.fillRect(13, 6, 14, 9);
+    // Visor (cyan glow instead of face)
+    g.fillStyle(0x00e8ff);
+    g.fillRect(13, 8, 14, 4);
 
-    // Eyes (more expressive)
-    g.fillStyle(0x000000);
-    g.fillRect(15, 8, 4, 4);
-    g.fillRect(21, 8, 4, 4);
+    // Eyes (visor bar - single glowing strip)
+    g.fillStyle(0x00e8ff, 0.9);
+    g.fillRect(14, 8, 12, 3);
 
-    // Eye highlights (white sparkles)
-    g.fillStyle(0xffffff);
-    g.fillRect(16, 9, 2, 2);
-    g.fillRect(22, 9, 2, 2);
+    // Visor highlight
+    g.fillStyle(0xffffff, 0.5);
+    g.fillRect(15, 8, 5, 1);
 
-    // Mouth (small smile)
-    g.fillStyle(0xcc6666);
-    g.fillRect(18, 12, 4, 2);
-
-    // Hair/cap (add detail)
-    g.fillStyle(0xff8844);
+    // Helmet (dark with cyan stripe)
+    g.fillStyle(0x2a2a4a);
     g.fillRect(11, 2, 18, 5);
-    g.fillRect(10, 3, 4, 4);  // Side bang left
-    g.fillRect(26, 3, 4, 4); // Side bang right
+    g.fillRect(10, 3, 4, 4);  // Side left
+    g.fillRect(26, 3, 4, 4); // Side right
     g.fillRect(16, 0, 8, 3); // Top detail
+    // Cyan stripe on helmet
+    g.fillStyle(0x00e8ff);
+    g.fillRect(16, 1, 8, 1);
 
     // Legs with separation
-    g.fillStyle(0x3366cc);
+    g.fillStyle(0x141430);
     g.fillRect(12, 30, 7, 8);
     g.fillRect(21, 30, 7, 8);
 
     // Feet
-    g.fillStyle(0x4477dd);
+    g.fillStyle(0x1a1a3a);
     g.fillRect(11, 36, 8, 4);
     g.fillRect(21, 36, 8, 4);
 
     // Arms with better positioning
     // Left arm
-    g.fillStyle(0x5599ff);
+    g.fillStyle(0x1a1a3a);
     g.fillRect(3, 14, 8, 12);
-    g.fillStyle(0xffddaa); // Hand
+    g.fillStyle(0x00e8ff); // Cyan hand glow
     g.fillRect(3, 24, 8, 4);
 
     // Right arm
-    g.fillStyle(0x5599ff);
+    g.fillStyle(0x1a1a3a);
     g.fillRect(29, 14, 8, 12);
-    g.fillStyle(0xffddaa); // Hand
+    g.fillStyle(0x00e8ff); // Cyan hand glow
     g.fillRect(29, 24, 8, 4);
 
+    // Cyan accent lines on body
+    g.fillStyle(0x00e8ff, 0.6);
+    g.fillRect(10, 15, 20, 1);
+    g.fillRect(10, 22, 20, 1);
+
     // Outline/shading
-    g.lineStyle(1, 0x224488, 0.5);
+    g.lineStyle(1, 0x00e8ff, 0.3);
     g.strokeRect(10, 3, 20, 31);
 
     g.generateTexture('player', s, s);

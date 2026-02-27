@@ -47,8 +47,7 @@ export default class MagicBolt extends BaseWeapon {
       this.scene.physics.velocityFromAngle(
         Phaser.Math.RadToDeg(angle), stats.speed, b.body.velocity
       );
-      // Tween color
-      this.scene.tweens.add({ targets: b, alpha: { from: 0.6, to: 1 }, duration: 200, yoyo: true, repeat: -1 });
+      b.setAlpha(0.85);
     });
 
     // SFX
