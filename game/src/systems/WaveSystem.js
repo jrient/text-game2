@@ -282,7 +282,7 @@ export default class WaveSystem {
    * Advance to next batch
    */
   advanceBatch() {
-    this._nextBatchTriggered = false; // Reset trigger flag
+    this._nextBatchTriggered = true; // Mark as triggered to prevent duplicate calls
     this.batch++;
 
     if (this.batch >= this.batchesPerWave) {
@@ -295,8 +295,9 @@ export default class WaveSystem {
       this._batchDelay = 1500;
     }
 
-    // _startNextBatch() will be called by update() after delay,
-    // which will reset _batchEnemiesSpawned and set _spawnTimer = 0
+    // Reset spawn counter and start spawning immediately when delay ends
+    this._batchEnemiesSpawned = 0;
+    this._spawnTimer = 0;
   }
 
   getWave() { return this.wave; }

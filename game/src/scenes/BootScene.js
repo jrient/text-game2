@@ -33,12 +33,12 @@ export default class BootScene extends Phaser.Scene {
   }
 
   _generateTextures() {
-    // ── Enhanced Pixel tile textures ────────────────────────────
-    this._makeDetailedTile('tile_grass', [0x0a2a2a, 0x082020, 0x0c3535, 0x061818], 0x00aa88);
-    this._makeDetailedTile('tile_sand',  [0x3a2218, 0x2a1810, 0x4a2a1a, 0x1a0e08], 0x884422);
-    this._makeDetailedTile('tile_stone', [0x1a1a2a, 0x141428, 0x222238, 0x0e0e1e], 0x3344aa);
-    this._makeDetailedTile('tile_lava',  [0x3a0028, 0x2a001a, 0x4a0035, 0x1a0010], 0xff00aa);
-    this._makeDetailedTile('tile_void',  [0x0a0018, 0x080014, 0x0e001e, 0x06000e], 0x6622cc);
+    // ── Enhanced Pixel tile textures (subtle, comfortable colors) ────────────────────────────
+    this._makeDetailedTile('tile_grass', [0x2a3a2a, 0x253525, 0x2f3f2f, 0x202a20], 0x3a4a3a);
+    this._makeDetailedTile('tile_sand',  [0x4a3a2a, 0x453525, 0x4f3f2f, 0x3a2a20], 0x5a4a3a);
+    this._makeDetailedTile('tile_stone', [0x3a3a40, 0x35353b, 0x3f3f45, 0x303038], 0x4a4a50);
+    this._makeDetailedTile('tile_lava',  [0x3a2a30, 0x35252b, 0x3f2f35, 0x302028], 0x4a3a40);
+    this._makeDetailedTile('tile_void',  [0x1a1a25, 0x151520, 0x1f1f2a, 0x10101a], 0x2a2a35);
 
     // ── Player (improved design) ────────────────────────────────
     this._makeEnhancedPlayer();
@@ -81,36 +81,33 @@ export default class BootScene extends Phaser.Scene {
   // ═════════════════════════════════════════════════════════════════
 
   /**
-   * Create detailed tile with small decorations
+   * Create detailed tile with subtle texture
    */
   _makeDetailedTile(key, colors, accentColor) {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
     const s = 48;
 
-    // Base color
+    // Base color (main tile color)
     g.fillStyle(colors[0]);
     g.fillRect(0, 0, s, s);
 
-    // Add pixel noise and texture
-    for (let i = 0; i < 20; i++) {
+    // Add subtle variation - only slightly different colors
+    for (let i = 0; i < 12; i++) {
       const cx = Math.floor(Math.random() * 6) * 8;
       const cy = Math.floor(Math.random() * 6) * 8;
-      g.fillStyle(colors[1 + (i % 3)]);
+      // Use slightly lighter/darker variant of base color
+      g.fillStyle(colors[Math.floor(Math.random() * colors.length)]);
       g.fillRect(cx, cy, 8, 8);
     }
 
-    // Add small decorative details (grass/stone/etc)
-    for (let i = 0; i < 8; i++) {
+    // Add very subtle small details (minimal and muted)
+    for (let i = 0; i < 4; i++) {
       const dx = Phaser.Math.Between(4, s - 8);
       const dy = Phaser.Math.Between(4, s - 8);
-      g.fillStyle(accentColor);
-      g.fillRect(dx, dy, 3, 3);
-      g.fillRect(dx + 1, dy + 1, 2, 2);
+      // Use a more muted version of accent, not too bright
+      g.fillStyle(accentColor, 0.3);
+      g.fillRect(dx, dy, 2, 2);
     }
-
-    // Add border for tile definition
-    g.lineStyle(1, 0x000000, 0.2);
-    g.strokeRect(0, 0, s, s);
 
     g.generateTexture(key, s, s);
     g.destroy();
