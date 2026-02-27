@@ -3,15 +3,23 @@ import BaseWeapon from './BaseWeapon.js';
 export default class HomingMissile extends BaseWeapon {
   constructor(scene, skillData) {
     super(scene, skillData);
-    this._bullets = [];
     this._bulletGroup = scene.physics.add.group({ runChildUpdate: false, maxSize: 50 });
     scene.addBulletGroup(this._bulletGroup, this._onHit.bind(this));
+    // Pre-generate missile texture once
+    if (!scene.textures.exists('homing_missile')) {
+      const g = scene.make.graphics({ x: 0, y: 0, add: false });
+      g.fillStyle(0xff4444);
+      g.fillCircle(6, 6, 6);
+      g.fillStyle(0xffaa00);
+      g.fillCircle(9, 6, 3);
+      g.generateTexture('homing_missile', 12, 12);
+      g.destroy();
+    }
   }
 
   update(time, delta) {
     const stats = this.getStats();
-    const cooldown = Math.round(stats.cooldown * (1 - this.player.cooldownReduction));
-    if (time - this._lastFire > cooldown) {
+    if (time - this._lastFire > stats.cooldown) {
       this._fire(stats);
       this._lastFire = time;
     }
@@ -49,6 +57,8 @@ export default class HomingMissile extends BaseWeapon {
       if (bullet.getData('lifetime')) {
         bullet.setData('lifetime', bullet.getData('lifetime') - delta);
         if (bullet.getData('lifetime') <= 0) {
+          const trail = bullet.getData('trail');
+          if (trail) trail.destroy();
           bullet.setActive(false).setVisible(false);
         }
       }
@@ -65,16 +75,7 @@ export default class HomingMissile extends BaseWeapon {
         bullet.setActive(true).setVisible(true);
         bullet.setSize(16, 16);
         bullet.setDepth(8);
-
-        // Draw missile
-        const graphics = this.scene.add.graphics();
-        graphics.fillStyle(0xff4444);
-        graphics.fillCircle(0, 0, 6);
-        graphics.fillStyle(0xffaa00);
-        graphics.fillCircle(3, 0, 3);
-        graphics.generateTexture('missile_temp_' + bullet.x, 12, 12);
-        graphics.destroy();
-        bullet.setTexture('missile_temp_' + bullet.x);
+        bullet.setTexture('homing_missile');
 
         // Random initial direction
         const angle = Math.random() * Math.PI * 2;
@@ -96,16 +97,17 @@ export default class HomingMissile extends BaseWeapon {
   }
 
   _findNearestEnemy(x, y) {
-    const enemies = this.scene.enemyGroup.getChildren().filter(e => e.active);
-    if (enemies.length === 0) return null;
-
+    const enemies = this.scene.enemyGroup.getChildren();
     let nearest = null;
-    let nearestDist = Infinity;
-    for (const enemy of enemies) {
-      const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearest = enemy;
+    let nearestDistSq = Infinity;
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      if (!e.active) continue;
+      const dx = x - e.x, dy = y - e.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < nearestDistSq) {
+        nearestDistSq = distSq;
+        nearest = e;
       }
     }
     return nearest;

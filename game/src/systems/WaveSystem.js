@@ -32,6 +32,10 @@ export default class WaveSystem {
 
     // Track spawned enemies for current batch
     this._batchEnemiesSpawned = 0;
+
+    // Early spawn trigger: start next batch when N enemies remain
+    this.spawnThreshold = 5; // Start next batch when 5 enemies left
+    this._nextBatchTriggered = false;
   }
 
   update(delta, elapsedSeconds) {
@@ -101,6 +105,8 @@ export default class WaveSystem {
    */
   _startNextBatch() {
     this._batchEnemiesSpawned = 0;
+    // Start spawning immediately when a new batch begins
+    this._spawnTimer = 0;
 
     if (this.mode === 'campaign') {
       this._startCampaignBatch();
@@ -122,11 +128,8 @@ export default class WaveSystem {
       this._batchDelay = 3000; // 3 second delay after boss
       return;
     }
-
-    // Set spawn interval based on wave
-    const baseInterval = cfg.waveConfig?.interval || 800;
-    const waveReduction = this.wave * 50;
-    this._spawnTimer = Math.max(300, baseInterval - waveReduction);
+    // _spawnTimer is already set to 0 by _startNextBatch(),
+    // _spawnSingle() handles inter-spawn timing (150ms)
   }
 
   /**
@@ -142,14 +145,8 @@ export default class WaveSystem {
       this._batchDelay = 5000; // Longer delay after boss
       return;
     }
-
-    // Elite wave check
-    const isElite = this.wave % cfg.eliteEvery === 0;
-
-    // Calculate spawn interval
-    const baseInterval = cfg.baseInterval || 600;
-    const waveReduction = Math.min(300, this.wave * 20);
-    this._spawnTimer = Math.max(250, baseInterval - waveReduction);
+    // _spawnTimer is already set to 0 by _startNextBatch(),
+    // _spawnSingle() handles inter-spawn timing (150ms)
   }
 
   /**
@@ -259,6 +256,18 @@ export default class WaveSystem {
   }
 
   /**
+   * Check if should trigger next batch (early trigger when N enemies remain)
+   */
+  shouldTriggerNextBatch() {
+    // Already triggered or batch not complete
+    if (this._nextBatchTriggered || !this.isBatchComplete()) return false;
+
+    const aliveEnemies = this.scene.enemyGroup.getChildren().filter(e => e.active).length;
+    // Trigger next batch when only N enemies remain
+    return aliveEnemies <= this.spawnThreshold;
+  }
+
+  /**
    * Check if current wave is complete
    */
   isWaveComplete() {
@@ -273,6 +282,7 @@ export default class WaveSystem {
    * Advance to next batch
    */
   advanceBatch() {
+    this._nextBatchTriggered = false; // Reset trigger flag
     this.batch++;
 
     if (this.batch >= this.batchesPerWave) {
@@ -284,6 +294,9 @@ export default class WaveSystem {
       // Small delay between batches
       this._batchDelay = 1500;
     }
+
+    // _startNextBatch() will be called by update() after delay,
+    // which will reset _batchEnemiesSpawned and set _spawnTimer = 0
   }
 
   getWave() { return this.wave; }

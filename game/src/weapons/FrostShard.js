@@ -3,15 +3,23 @@ import BaseWeapon from './BaseWeapon.js';
 export default class FrostShard extends BaseWeapon {
   constructor(scene, skillData) {
     super(scene, skillData);
-    this._shards = [];
     this._bulletGroup = scene.physics.add.group({ runChildUpdate: false, maxSize: 40 });
     scene.addBulletGroup(this._bulletGroup, this._onHit.bind(this));
+    // Pre-generate shard texture once
+    if (!scene.textures.exists('frost_shard')) {
+      const g = scene.make.graphics({ x: 0, y: 0, add: false });
+      g.fillStyle(0xaaddff, 0.9);
+      g.fillTriangle(6, 0, 2, 10, 10, 10);
+      g.fillStyle(0xffffff, 0.6);
+      g.fillTriangle(6, 3, 4, 8, 8, 8);
+      g.generateTexture('frost_shard', 12, 12);
+      g.destroy();
+    }
   }
 
   update(time, delta) {
     const stats = this.getStats();
-    const cooldown = Math.round(stats.cooldown * (1 - this.player.cooldownReduction));
-    if (time - this._lastFire > cooldown) {
+    if (time - this._lastFire > stats.cooldown) {
       this._fire(stats);
       this._lastFire = time;
     }
@@ -46,16 +54,7 @@ export default class FrostShard extends BaseWeapon {
         shard.setActive(true).setVisible(true);
         shard.setSize(14, 14);
         shard.setDepth(8);
-
-        // Draw ice shard
-        const graphics = this.scene.add.graphics();
-        graphics.fillStyle(0xaaddff, 0.9);
-        graphics.fillTriangle(0, -6, -4, 4, 4, 4);
-        graphics.fillStyle(0xffffff, 0.6);
-        graphics.fillTriangle(0, -3, -2, 2, 2, 2);
-        graphics.generateTexture('shard_temp_' + shard.x, 12, 12);
-        graphics.destroy();
-        shard.setTexture('shard_temp_' + shard.x);
+        shard.setTexture('frost_shard');
 
         shard.body.setVelocity(
           Math.cos(angle) * speed,
@@ -93,25 +92,30 @@ export default class FrostShard extends BaseWeapon {
   }
 
   _applySlow(enemy, factor, duration) {
-    if (!enemy._originalSpeed) {
+    // Store original speed if not already stored
+    if (enemy._originalSpeed === undefined) {
       enemy._originalSpeed = enemy.speed;
     }
 
+    // Apply slow effect
     enemy.speed = enemy._originalSpeed * factor;
     enemy.setTint(0x88ccff);
 
     // Clear any existing slow timer
     if (enemy._slowTimer) {
       enemy._slowTimer.remove();
+      enemy._slowTimer = null;
     }
 
     // Set restore timer
     enemy._slowTimer = this.scene.time.delayedCall(duration, () => {
-      if (enemy.active) {
+      if (enemy && enemy.active) {
+        // Restore original speed and clear tint
         enemy.speed = enemy._originalSpeed;
         enemy.clearTint();
-        enemy._originalSpeed = null;
+        enemy._originalSpeed = undefined;
       }
+      enemy._slowTimer = null;
     });
   }
 

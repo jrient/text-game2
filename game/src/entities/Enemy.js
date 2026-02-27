@@ -312,8 +312,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       // Teleport closer to player
       const angle = Math.atan2(playerY - this.y, playerX - this.x);
       const teleportDist = 100;
-      const newX = playerX - Math.cos(angle) * teleportDist + Phaser.Math.Between(-30, 30);
-      const newY = playerY - Math.sin(angle) * teleportDist + Phaser.Math.Between(-30, 30);
+      let newX = playerX - Math.cos(angle) * teleportDist + Phaser.Math.Between(-30, 30);
+      let newY = playerY - Math.sin(angle) * teleportDist + Phaser.Math.Between(-30, 30);
+
+      // Clamp to world bounds to prevent teleporting outside
+      const bounds = this.scene.physics.world.bounds;
+      newX = Phaser.Math.Clamp(newX, bounds.x + 50, bounds.x + bounds.width - 50);
+      newY = Phaser.Math.Clamp(newY, bounds.y + 50, bounds.y + bounds.height - 50);
 
       // Teleport effect
       this.scene.spawnExplosion(this.x, this.y, 30, 0x6644aa);
@@ -357,35 +362,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  isDead() {
-    if (this.hp <= 0) {
-      this.onDeath();
-      return true;
-    }
-    return false;
-  }
-      const angle = Phaser.Math.Angle.Between(this.x, this.y, playerX, playerY);
-      this.body.setVelocity(
-        Math.cos(angle) * this.speed,
-        Math.sin(angle) * this.speed,
-      );
-      this.setFlipX(playerX < this.x);
-    }
-
-    // Update HP bar position (cheap, just position update)
-    if (this._hpBg && this._hpFg) {
-      const y = this.y - this.displayHeight / 2 - C.ENEMY.HP_BAR_OFFSET_Y;
-      this._hpBg.setPosition(this.x, y);
-      this._hpFg.setPosition(this.x - C.ENEMY.HP_BAR_WIDTH / 2, y);
-    }
-  }
-
   isDead() { return this.hp <= 0; }
 
   destroy() {
     if (this._hpBg) { this._hpBg.destroy(); this._hpBg = null; }
     if (this._hpFg) { this._hpFg.destroy(); this._hpFg = null; }
-    // Clear from cooldowns map if exists
     super.destroy();
   }
 }

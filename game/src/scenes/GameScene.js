@@ -80,6 +80,10 @@ export default class GameScene extends Phaser.Scene {
     // Fade in
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
+    // Wave display tracking
+    this._lastWave = -1;
+    this._lastBatch = -1;
+
     // Achievement toast system
     this._achievementToasts = [];
     this._toastTimer = this.time.addEvent({
@@ -112,32 +116,26 @@ export default class GameScene extends Phaser.Scene {
     const toastX = C.W / 2;
     const toastY = isPortrait ? C.H - 100 : C.H - 80;
 
-    // Background
-    const bg = this.add.rectangle(toastX, toastY, toastWidth, toastHeight, 0x112233, 0.95)
-      .setStrokeStyle(2, 0x4488ff)
-      .setScrollFactor(0)
-      .setDepth(100);
+    // All positions relative to container center (0, 0)
+    const bg = this.add.rectangle(0, 0, toastWidth, toastHeight, 0x0a0a24, 0.95)
+      .setStrokeStyle(2, 0x00e8ff);
 
-    // Icon
-    const icon = this.add.text(toastX - toastWidth / 2 + 30, toastY, achievement.icon, {
+    const icon = this.add.text(-toastWidth / 2 + 30, 0, achievement.icon, {
       fontSize: '24px',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+    }).setOrigin(0.5);
 
-    // Name
-    const name = this.add.text(toastX - toastWidth / 2 + 55, toastY - 8, achievement.name, {
+    const name = this.add.text(-toastWidth / 2 + 55, -8, achievement.name, {
       fontFamily: "'Press Start 2P'",
       fontSize: isPortrait ? '9px' : '11px',
-      color: '#44ff88',
-    }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+      color: '#00ff88',
+    }).setOrigin(0, 0.5);
 
-    // Description
-    const desc = this.add.text(toastX - toastWidth / 2 + 55, toastY + 10, achievement.description, {
+    const desc = this.add.text(-toastWidth / 2 + 55, 10, achievement.description, {
       fontFamily: "'Press Start 2P'",
       fontSize: isPortrait ? '6px' : '8px',
-      color: '#88aacc',
-    }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
+      color: '#8899bb',
+    }).setOrigin(0, 0.5);
 
-    // Container
     const container = this.add.container(toastX, toastY, [bg, icon, name, desc])
       .setScrollFactor(0)
       .setDepth(100)
@@ -212,12 +210,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   _makeKey(container, x, y, label, color) {
-    const bg = container.add.rectangle(x, y, 22, 22, 0x000000, 0.6);
-    const text = container.add.text(x, y, label, {
+    const bg = this.add.rectangle(x, y, 22, 22, 0x000000, 0.6);
+    const text = this.add.text(x, y, label, {
       fontFamily: "'Press Start 2P'",
       fontSize: '10px',
-      color: color,
+      color: '#' + color.toString(16).padStart(6, '0'),
     }).setOrigin(0.5);
+    container.add([bg, text]);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -471,7 +470,6 @@ export default class GameScene extends Phaser.Scene {
     g.fillCircle(0, -2, 12);
     // Floating animation will be added in update
   }
-  }
 
   // ═══════════════════════════════════════════════════════
   //  PLAYER
@@ -578,22 +576,22 @@ export default class GameScene extends Phaser.Scene {
 
     // Top bar background
     const topBarHeight = isPortrait ? 44 : 50;
-    const topBg = this.add.rectangle(C.W / 2, topBarHeight / 2, C.W, topBarHeight, 0x000000, 0.7);
+    const topBg = this.add.rectangle(C.W / 2, topBarHeight / 2, C.W, topBarHeight, 0x04040e, 0.7);
     this._hud.add(topBg);
 
     // HP bar
     const hpBar = C.HP_BAR;
     this._hpBarBg = this.add.rectangle(
       hpBar.x + hpBar.w / 2, hpBar.y + hpBar.h / 2,
-      hpBar.w, hpBar.h, 0x440000
+      hpBar.w, hpBar.h, 0x220011
     );
     this._hpBar = this.add.rectangle(
       hpBar.x + hpBar.w / 2, hpBar.y + hpBar.h / 2,
-      hpBar.w, hpBar.h, 0xff4444
+      hpBar.w, hpBar.h, 0xff2266
     );
     this._hpText = this.add.text(
       hpBar.x + hpBar.w + 4, hpBar.y, '100',
-      { fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '7px' : '10px', color: '#ff8888' }
+      { fontFamily: "'Press Start 2P'", fontSize: isPortrait ? '7px' : '10px', color: '#ff4488' }
     );
     this._hud.add([this._hpBarBg, this._hpBar, this._hpText]);
 
@@ -602,27 +600,27 @@ export default class GameScene extends Phaser.Scene {
     const fontSizeSmall = isPortrait ? '7px' : '10px';
 
     if (isPortrait) {
-      // Portrait: compact layout
-      this._lvText = this.add.text(200, 8, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#44ff88' }).setOrigin(0.5, 0);
-      this._timerText = this.add.text(C.W - 10, 8, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffdd44' }).setOrigin(1, 0);
-      this._killText = this.add.text(C.W - 10, 22, '💀 0', { fontFamily: "'Press Start 2P'", fontSizeSmall, color: '#ffaaaa' }).setOrigin(1, 0);
+      // Portrait: compact layout — level and timer on the right, kills below
+      this._lvText = this.add.text(C.W - 100, 8, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#00ff88' }).setOrigin(0.5, 0);
+      this._timerText = this.add.text(C.W - 10, 8, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffcc00' }).setOrigin(1, 0);
+      this._killText = this.add.text(C.W - 10, 22, '💀 0', { fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#ff4488' }).setOrigin(1, 0);
     } else {
       // Landscape: spread out layout
-      this._lvText = this.add.text(350, 15, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#44ff88' }).setOrigin(0.5, 0);
-      this._timerText = this.add.text(500, 15, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffdd44' }).setOrigin(0.5, 0);
-      this._killText = this.add.text(650, 15, '💀 0', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffaaaa' }).setOrigin(0.5, 0);
+      this._lvText = this.add.text(350, 15, 'Lv.1', { fontFamily: "'Press Start 2P'", fontSize, color: '#00ff88' }).setOrigin(0.5, 0);
+      this._timerText = this.add.text(500, 15, '00:00', { fontFamily: "'Press Start 2P'", fontSize, color: '#ffcc00' }).setOrigin(0.5, 0);
+      this._killText = this.add.text(650, 15, '💀 0', { fontFamily: "'Press Start 2P'", fontSize, color: '#ff4488' }).setOrigin(0.5, 0);
     }
     this._hud.add([this._lvText, this._timerText, this._killText]);
 
     // Wave display (for endless mode)
     const waveY = isPortrait ? 50 : 75;
     this._waveText = this.add.text(C.W / 2, waveY, 'Wave 1-1', {
-      fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#88aacc',
+      fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#8899bb',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(50).setVisible(false);
     if (this.gameMode === 'endless') {
       this._waveText.setVisible(true);
     }
-    this._waveBg = this.add.rectangle(C.W / 2, waveY + 3, 120, 20, 0x000000, 0.4)
+    this._waveBg = this.add.rectangle(C.W / 2, waveY + 3, 120, 20, 0x04040e, 0.4)
       .setScrollFactor(0).setDepth(49).setVisible(this.gameMode === 'endless');
 
     // EXP bar (below HP)
@@ -635,9 +633,10 @@ export default class GameScene extends Phaser.Scene {
     // Boss HP bar (hidden by default)
     const bossY = C.H - (isPortrait ? 36 : 50);
     const bossWidth = isPortrait ? 300 : 400;
-    this._bossHpBg = this.add.rectangle(C.W / 2, bossY, bossWidth, 16, 0x440000).setVisible(false);
-    this._bossHpBar = this.add.rectangle(C.W / 2 - bossWidth / 2 + 1, bossY, bossWidth - 2, 14, 0xff2200).setOrigin(0, 0.5).setVisible(false);
-    this._bossLabel = this.add.text(C.W / 2, bossY - 16, '', { fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#ff8888' }).setOrigin(0.5).setVisible(false);
+    this._bossBarWidth = bossWidth - 2;
+    this._bossHpBg = this.add.rectangle(C.W / 2, bossY, bossWidth, 16, 0x220011).setVisible(false);
+    this._bossHpBar = this.add.rectangle(C.W / 2 - bossWidth / 2 + 1, bossY, this._bossBarWidth, 14, 0xff2266).setOrigin(0, 0.5).setVisible(false);
+    this._bossLabel = this.add.text(C.W / 2, bossY - 16, '', { fontFamily: "'Press Start 2P'", fontSize: fontSizeSmall, color: '#ff4488' }).setOrigin(0.5).setVisible(false);
     this._hud.add([this._bossHpBg, this._bossHpBar, this._bossLabel]);
 
     // Pause button
@@ -753,7 +752,7 @@ export default class GameScene extends Phaser.Scene {
     if (!enemy.active || !player || player.invincible) return;
     const dmg = player.takeDamage(enemy.damage);
     if (dmg > 0) {
-      this._showDamageNumber(player.x, player.y - 20, dmg, '#ff4444');
+      this._showDamageNumber(player.x, player.y - 20, dmg, '#ff2266');
       achievementManager.recordDamage();
     }
     this._updateHpBar();
@@ -809,7 +808,7 @@ export default class GameScene extends Phaser.Scene {
     achievementManager.updateSkillLevels(totalLevels);
     this._paused = false;
     this.physics.resume();
-    this.spawnHitParticle(this.player.x, this.player.y, 0x44ff88);
+    this.spawnHitParticle(this.player.x, this.player.y, 0x00ff88);
   }
 
   _getTotalSkillLevels() {
@@ -844,8 +843,6 @@ export default class GameScene extends Phaser.Scene {
 
     // Check if enemy is dead after damage
     if (enemy.hp <= 0) {
-      // Trigger death behavior (explosion, etc)
-      if (enemy.onDeath) enemy.onDeath();
       this._killEnemy(enemy);
     }
     // Update boss bar
@@ -907,25 +904,58 @@ export default class GameScene extends Phaser.Scene {
   //  QUERY HELPERS (used by weapons)
   // ═══════════════════════════════════════════════════════
   getNearestEnemies(x, y, count) {
-    const alive = this.enemyGroup.getChildren().filter(e => e.active);
-    alive.sort((a, b) =>
-      Phaser.Math.Distance.Between(x, y, a.x, a.y) - Phaser.Math.Distance.Between(x, y, b.x, b.y)
-    );
-    return alive.slice(0, count);
+    const enemies = this.enemyGroup.getChildren();
+    // Use partial selection: maintain a small sorted result array
+    const result = [];
+    const resultDists = [];
+    let maxDist = Infinity;
+
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      if (!e.active) continue;
+      const dx = x - e.x, dy = y - e.y;
+      const distSq = dx * dx + dy * dy;
+      if (result.length < count) {
+        result.push(e);
+        resultDists.push(distSq);
+        if (result.length === count) maxDist = Math.max(...resultDists);
+      } else if (distSq < maxDist) {
+        // Replace the farthest entry
+        let maxIdx = 0;
+        for (let j = 1; j < resultDists.length; j++) {
+          if (resultDists[j] > resultDists[maxIdx]) maxIdx = j;
+        }
+        result[maxIdx] = e;
+        resultDists[maxIdx] = distSq;
+        maxDist = Math.max(...resultDists);
+      }
+    }
+    // Sort the small result array by distance
+    result.sort((a, b) => {
+      const da = (x - a.x) ** 2 + (y - a.y) ** 2;
+      const db = (x - b.x) ** 2 + (y - b.y) ** 2;
+      return da - db;
+    });
+    return result;
   }
 
   getDenseTarget(x, y) {
-    // Find point with most enemies nearby (simplified: return centroid of nearest 5)
     const nearest = this.getNearestEnemies(x, y, 5);
     if (nearest.length === 0) return null;
     return nearest[Math.floor(nearest.length / 2)];
   }
 
   getEnemiesInRadius(x, y, radius) {
-    return this.enemyGroup.getChildren().filter(e => {
-      if (!e.active) return false;
-      return Phaser.Math.Distance.Between(x, y, e.x, e.y) <= radius;
-    });
+    const enemies = this.enemyGroup.getChildren();
+    const result = [];
+    const r2 = radius * radius;
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      if (!e.active) continue;
+      const dx = x - e.x, dy = y - e.y;
+      if (dx * dx + dy * dy <= r2) result.push(e);
+    }
+    return result;
   }
 
   // ═══════════════════════════════════════════════════════
@@ -981,7 +1011,7 @@ export default class GameScene extends Phaser.Scene {
 
   showBossAlert(name) {
     const txt = this.add.text(C.W / 2, C.H / 2 - 60, `⚠ BOSS: ${name}`, {
-      fontFamily: "'Press Start 2P'", fontSize: '13px', color: '#ff4444',
+      fontFamily: "'Press Start 2P'", fontSize: '13px', color: '#ff2266',
       stroke: '#000000', strokeThickness: 3,
     }).setScrollFactor(0).setDepth(60).setOrigin(0.5);
     this.cameras.main.shake(400, 0.012);
@@ -1005,7 +1035,7 @@ export default class GameScene extends Phaser.Scene {
     const ratio = Math.max(0, p.hp / p.maxHp);
     this._hpBar.setSize(C.HP_BAR.w * ratio, C.HP_BAR.h);
     this._hpBar.setX(C.HP_BAR.x + (C.HP_BAR.w * ratio) / 2);
-    const col = ratio > 0.5 ? 0x44ff44 : ratio > 0.25 ? 0xffaa00 : 0xff3333;
+    const col = ratio > 0.5 ? 0x00ff88 : ratio > 0.25 ? 0xffcc00 : 0xff2266;
     this._hpBar.setFillStyle(col);
     this._hpText.setText(`${p.hp}/${p.maxHp}`);
   }
@@ -1019,7 +1049,7 @@ export default class GameScene extends Phaser.Scene {
   _updateBossBar() {
     if (!this._currentBoss) return;
     const ratio = Math.max(0, this._currentBoss.hp / this._currentBoss.maxHp);
-    this._bossHpBar.setSize(298 * ratio, 14);
+    this._bossHpBar.setSize(this._bossBarWidth * ratio, 14);
   }
 
   _onSecond() {
@@ -1028,6 +1058,9 @@ export default class GameScene extends Phaser.Scene {
     const m = Math.floor(this._elapsedSeconds / 60).toString().padStart(2, '0');
     const s = (this._elapsedSeconds % 60).toString().padStart(2, '0');
     this._timerText.setText(`${m}:${s}`);
+
+    // Periodic wave display refresh
+    this._updateWaveDisplay();
 
     // Campaign time-out
     if (this.gameMode === 'campaign' && this._elapsedSeconds >= this.levelConfig.duration) {
@@ -1161,30 +1194,40 @@ export default class GameScene extends Phaser.Scene {
 
     this.player.update(dx, dy);
 
-    // Enemy updates
-    this.enemyGroup.getChildren().forEach(e => {
-      if (e.active) e.update(this.player.x, this.player.y, delta);
-    });
+    // Enemy updates + cleanup dead enemies
+    const enemies = this.enemyGroup.getChildren();
+    const px = this.player.x, py = this.player.y;
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (e.active) {
+        e.update(px, py, delta);
+      } else {
+        e.destroy();
+      }
+    }
 
-    // Orb attraction
+    // Orb attraction + cleanup
     const pickupRange = this.player.getEffectivePickupRange();
-    this.orbGroup.getChildren().forEach(orb => {
-      if (!orb.active) return;
-      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, orb.x, orb.y);
-      if (dist < pickupRange) orb.attractTo(this.player.x, this.player.y);
+    const orbs = this.orbGroup.getChildren();
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const orb = orbs[i];
+      if (!orb.active) { orb.destroy(); continue; }
+      const dx2 = px - orb.x, dy2 = py - orb.y;
+      const dist = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+      if (dist < pickupRange) orb.attractTo(px, py);
       else if (orb.isAttracted()) orb.stopAttract();
-    });
+    }
 
     // Wave system update
     this.waveSystem.update(delta, this._elapsedSeconds);
 
     // Check wave/batch completion (for endless mode)
-    if (this.gameMode === 'endless' && this.waveSystem.isWaveComplete()) {
-      this.waveSystem.advanceBatch();
-      this._updateWaveDisplay();
-    } else {
-      // Update wave display
-      this._updateWaveDisplay();
+    // Also check for early trigger when N enemies remain
+    if (this.gameMode === 'endless') {
+      if (this.waveSystem.shouldTriggerNextBatch() || this.waveSystem.isWaveComplete()) {
+        this.waveSystem.advanceBatch();
+        this._updateWaveDisplay();
+      }
     }
 
     // Skill / weapon updates
@@ -1198,6 +1241,10 @@ export default class GameScene extends Phaser.Scene {
     if (this.gameMode !== 'endless') return;
     const wave = this.waveSystem.getWave();
     const batch = this.waveSystem.getBatch();
+    // Only update text when values actually change
+    if (wave === this._lastWave && batch === this._lastBatch) return;
+    this._lastWave = wave;
+    this._lastBatch = batch;
     const totalBatches = this.waveSystem.batchesPerWave;
     this._waveText.setText(`Wave ${wave + 1}-${batch + 1}/${totalBatches}`);
   }
