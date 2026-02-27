@@ -104,6 +104,7 @@ export default class WaveSystem {
    * Start the next batch within current wave
    */
   _startNextBatch() {
+    this._nextBatchTriggered = false; // Reset trigger flag when starting new batch
     this._batchEnemiesSpawned = 0;
     // Start spawning immediately when a new batch begins
     this._spawnTimer = 0;
